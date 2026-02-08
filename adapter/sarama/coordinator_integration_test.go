@@ -68,12 +68,7 @@ func TestIntegration_KafkaCoordinator(t *testing.T) {
 
 	// test Acquire Locking
 	msgKey := []byte("test-lock-key")
-	msg := &resilience.InternalMessage{
-		KeyData:    msgKey,
-		Payload:    []byte("payload"),
-		HeaderData: &resilience.HeaderList{},
-	}
-	msg.SetTopic(topic) // explicitly set topic
+	msg := resilience.NewInternalMessage(topic, msgKey, []byte("payload"), nil)
 
 	t.Log("Acquiring lock...")
 	err = coord.Acquire(ctx, topic, msg)
@@ -160,11 +155,7 @@ func TestIntegration_KafkaCoordinator_ForeignLock(t *testing.T) {
 	require.NoError(t, err)
 
 	key := "shared-key"
-	msg := &resilience.InternalMessage{
-		KeyData:    []byte(key),
-		HeaderData: &resilience.HeaderList{},
-	}
-	msg.SetTopic(topic)
+	msg := resilience.NewInternalMessage(topic, []byte(key), nil, nil)
 
 	// initially NOT locked
 	assert.False(t, coord.IsLocked(ctx, msg))
@@ -245,11 +236,7 @@ func TestIntegration_KafkaCoordinator_Rebalance(t *testing.T) {
 	require.NoError(t, err)
 
 	// instance A acquires lock
-	msg := &resilience.InternalMessage{
-		KeyData:    []byte(key),
-		HeaderData: &resilience.HeaderList{},
-	}
-	msg.SetTopic(topic)
+	msg := resilience.NewInternalMessage(topic, []byte(key), nil, nil)
 
 	err = coordA.Acquire(ctxA, topic, msg)
 	require.NoError(t, err)
@@ -284,11 +271,7 @@ func TestIntegration_KafkaCoordinator_Rebalance(t *testing.T) {
 	require.NoError(t, err)
 
 	// verify Instance B sees the lock
-	msgB := &resilience.InternalMessage{
-		KeyData:    []byte(key),
-		HeaderData: &resilience.HeaderList{},
-	}
-	msgB.SetTopic(topic)
+	msgB := resilience.NewInternalMessage(topic, []byte(key), nil, nil)
 
 	isLocked := coordB.IsLocked(ctx, msgB)
 	assert.True(t, isLocked, "instance B should have restored the lock state from Kafka")
@@ -356,8 +339,7 @@ func TestIntegration_KafkaCoordinator_Synchronize(t *testing.T) {
 	require.NoError(t, err)
 
 	// verify lock is visible
-	msg := &resilience.InternalMessage{KeyData: []byte(key), HeaderData: &resilience.HeaderList{}}
-	msg.SetTopic(topic)
+	msg := resilience.NewInternalMessage(topic, []byte(key), nil, nil)
 	assert.True(t, coord.IsLocked(ctx, msg), "lock should be visible after Synchronize")
 }
 

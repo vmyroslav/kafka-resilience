@@ -86,6 +86,21 @@ type InternalMessage struct {
 	offset     int64
 }
 
+// NewInternalMessage creates a new InternalMessage with the given topic, key, value, and headers.
+func NewInternalMessage(topic string, key, value []byte, headers *HeaderList) *InternalMessage {
+	if headers == nil {
+		headers = &HeaderList{}
+	}
+
+	return &InternalMessage{
+		topic:      topic,
+		key:        key,
+		payload:    value,
+		headerData: headers,
+		timestamp:  time.Now(),
+	}
+}
+
 func NewFromMessage(msg Message) *InternalMessage {
 	im := &InternalMessage{
 		topic:      msg.Topic(),

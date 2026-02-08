@@ -658,12 +658,7 @@ func (h *dlqTestHandler) ConsumeClaim(session sarama.ConsumerGroupSession, claim
 				"payload", payload,
 			)
 
-			im := &resilience.InternalMessage{
-				KeyData:    msg.Key,
-				Payload:    msg.Value,
-				HeaderData: mapSaramaHeaders(msg.Headers),
-			}
-			im.SetTopic(msg.Topic)
+			im := resilience.NewInternalMessage(msg.Topic, msg.Key, msg.Value, mapSaramaHeaders(msg.Headers))
 			err := h.tracker.SendToDLQ(
 				session.Context(),
 				im,
@@ -861,12 +856,7 @@ func (h *dlqFreeTestHandler) ConsumeClaim(session sarama.ConsumerGroupSession, c
 				"payload", payload,
 			)
 
-			im := &resilience.InternalMessage{
-				KeyData:    msg.Key,
-				Payload:    msg.Value,
-				HeaderData: mapSaramaHeaders(msg.Headers),
-			}
-			im.SetTopic(msg.Topic)
+			im := resilience.NewInternalMessage(msg.Topic, msg.Key, msg.Value, mapSaramaHeaders(msg.Headers))
 			err := h.tracker.SendToDLQ(
 				session.Context(),
 				im,
