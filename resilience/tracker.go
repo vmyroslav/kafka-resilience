@@ -121,7 +121,7 @@ func (t *ErrorTracker) Start(ctx context.Context, topic string, handler Consumer
 	t.cancels[topic] = cancel
 	t.mu.Unlock()
 
-	// se derived context for setup and background workers
+	// use derived context for setup and background workers
 	// if setup fails, we cancel the context to clean up any partial state
 	if err := t.coordinator.Start(workerCtx, topic); err != nil {
 		cancel()
