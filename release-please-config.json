@@ -1,0 +1,15 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "release-type": "go",
+  "separate-pull-requests": true,
+  "packages": {
+    ".": {
+      "component": "kafka-resilience",
+      "changelog-path": "CHANGELOG.md"
+    },
+    "adapter/sarama": {
+      "component": "sarama",
+      "changelog-path": "CHANGELOG.md"
+    }
+  }
+}

@@ -4,9 +4,6 @@ includes:
   internal:
     taskfile: ./Taskfile.internal.yml
     internal: true
-  ci:
-    taskfile: ./Taskfile.ci.yml
-    internal: false
 
 tasks:
   default:
@@ -121,55 +118,15 @@ tasks:
 # #################################################
 # Build Tasks
 # #################################################
-  build:
-    desc: Build the project
-    summary: |
-      Builds the Go binary.
-      - CGO disabled for static binary
-      - Output to dist/ directory
-    vars:
-      BUILD_DIR: '{{.BUILD_DIR | default "dist"}}'
-      BINARY: '{{.BINARY | default "kafka-resilience"}}'
-    cmds:
-      - mkdir -p {{.BUILD_DIR}}
-      - CGO_ENABLED=0 go build -o {{.BUILD_DIR}}/{{.BINARY}} .
-
   build-example:
     desc: Build example applications
     summary: |
-      Builds all example applications in examples/ directory.
-      - CGO disabled
-      - Output to dist/ directory
+      Builds all example applications in examples/sarama/ directory.
+      Each example has its own go.mod with local replace directives.
     vars:
       BUILD_DIR: '{{.BUILD_DIR | default "dist"}}'
-      EXAMPLES: simple_consumer stream error_tracker
+      EXAMPLES: basic granular strict demo
     cmds:
       - mkdir -p {{.BUILD_DIR}}
       - for: { var: EXAMPLES, split: ' ' }
-        cmd: CGO_ENABLED=0 go build -o {{.BUILD_DIR}}/{{.ITEM}} ./examples/{{.ITEM}}
-
-# #################################################
-# CI/CD Tasks
-# #################################################
-  ci:prepare-release:
-    desc: Prepares release
-    summary: |
-      Usage: task prepare-release VERSION=1.1.0
-      1. Runs linters and tests.
-      2. Extracts release notes from CHANGELOG.md.
-      3. Updates CHANGELOG.md with the new version tag.
-    vars:
-      VERSION: '{{.VERSION}}'
-    preconditions:
-      - sh: 'test -n "{{.VERSION}}"'
-        msg: "VERSION variable is required. Usage: task ci:prepare-release VERSION=1.2.3"
-      - sh: 'echo "{{.VERSION}}" | grep -qE "^[0-9]+\.[0-9]+\.[0-9]+$"'
-        msg: "Version format must be 'X.Y.Z'. Passed: {{.VERSION}}"
-      - sh: "test -n \"$(awk '/^## \\[Unreleased\\]/{flag=1; next} /^## \\[/{flag=0} flag' CHANGELOG.md)\""
-        msg: "❌ The [Unreleased] section in CHANGELOG.md is empty. Nothing to release."
-    cmds:
-      - task: ci:check-version-bump
-        vars: { VERSION: "{{.VERSION}}" }
-      - task: ci:changelog:extract
-      - task: ci:changelog:update
-        vars: { VERSION: "v{{.VERSION}}" }
+        cmd: cd examples/sarama/{{.ITEM}} && CGO_ENABLED=0 go build -o ../../../{{.BUILD_DIR}}/{{.ITEM}} .
