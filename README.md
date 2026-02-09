@@ -1,18 +1,20 @@
 # Kafka Resilience
 
-`kafka-resilience` is a robust Kafka resilience library for Go that implements **non-blocking retries** with **strict ordering guarantees** for messages with the same key.
+A Go library for **non-blocking Kafka consumer retries** with **strict per-key ordering guarantees**.
+
+When a message fails, it is redirected to a retry topic without blocking the partition. A distributed lock (via a compacted Kafka topic) ensures that subsequent messages for the same key are held until the failed message is resolved — preserving ordering even across multiple consumer instances.
+
+For the design rationale and deep dive into the pattern, see the [Kafka Ordered Retries](https://devgeist.hashnode.dev/series/kafka-ordered-retries) blog series.
 
 ## Features
 
--   **Non-Blocking Retries**: Uses a separate "Retry Topic" (Bulkhead Pattern) to avoid stalling the main consumer.
--   **Strict Ordering**: Ensures that messages with the same key are processed in order, even when some messages fail and enter the retry chain.
--   **Distributed Coordination**: Uses a compacted Kafka topic ("Redirect Topic") as a distributed lock state to track failed keys across multiple consumer instances.
--   **Exponential Backoff**: Configurable backoff strategies for retries.
--   **Dead Letter Queue (DLQ)**: Automatically moves messages to a DLQ after maximum retries are exhausted.
--   **Library Agnostic**: Core logic is independent of Kafka clients. Includes a high-quality **Sarama adapter**.
--   **Automatic Topic Management**: Can automatically create and configure Retry, DLQ, and Redirect topics with appropriate settings (e.g., compaction for redirect topics).
-
----
+- **Non-blocking retries** — failed messages move to a separate retry topic, so the main consumer is never stalled.
+- **Strict per-key ordering** — distributed locks ensure messages with the same key are always processed in order, even during retries.
+- **Dead Letter Queue** — messages that exhaust retries are routed to a DLQ for manual inspection.
+- **Configurable backoff** — exponential (default), constant, and linear strategies.
+- **OpenTelemetry metrics** — built-in instrumentation with zero overhead when no OTel SDK is registered.
+- **Library-agnostic core** — interfaces in `resilience/` are independent of any Kafka client. Ships with a **Sarama adapter**.
+- **Topic management** — retry, redirect, and DLQ topics are created automatically with appropriate settings.
 
 ## Installation
 
@@ -20,110 +22,50 @@
 go get github.com/vmyroslav/kafka-resilience
 ```
 
-If you are using Sarama, also get the adapter:
+For the Sarama adapter:
 
 ```bash
 go get github.com/vmyroslav/kafka-resilience/adapter/sarama
 ```
 
----
-
-## Quick Start (with Sarama)
+## Quick Start
 
 ```go
-package main
+cfg := resilience.NewDefaultConfig()
+cfg.GroupID = "orders-processor"
+cfg.MaxRetries = 5
 
-import (
-	"context"
-	"errors"
-	"log/slog"
-	"github.com/IBM/sarama"
-	saramaadapter "github.com/vmyroslav/kafka-resilience/adapter/sarama"
-	"github.com/vmyroslav/kafka-resilience/resilience"
-)
+tracker, err := saramaadapter.NewResilienceTracker(cfg, client)
 
-func main() {
-	brokers := []string{"localhost:9092"}
-	topic := "orders"
-	groupID := "orders-processor"
+// Start coordinator + retry worker for the "orders" topic
+tracker.Start(ctx, "orders", handler)
 
-	// 1. Setup standard Sarama Client
-	saramaConfig := sarama.NewConfig()
-	saramaConfig.Version = sarama.V4_1_0_0
-	client, _ := sarama.NewClient(brokers, saramaConfig)
+// Wrap your main consumer handler with ordering enforcement
+resilientHandler := tracker.NewResilientHandler(handler)
+consumer.Consume(ctx, []string{"orders"}, resilientHandler)
+```
 
-	// 2. Configure Kafka Resilience
-	cfg := resilience.NewDefaultConfig()
-	cfg.GroupID = groupID
-	cfg.MaxRetries = 5
+Your handler just returns errors — the library handles the rest:
 
-	// 3. Initialize Tracker with Sarama Adapter
-	tracker, _ := saramaadapter.NewResilienceTracker(client, cfg)
-
-	ctx := context.Background()
-	handler := &MyOrderHandler{}
-
-	// 4. Start the resilience coordination & retry worker
-	tracker.Start(ctx, topic, handler)
-
-	// 5. Wrap your main consumer handler
-	consumerFactory := saramaadapter.NewConsumerFactory(client)
-	consumer, _ := consumerFactory.NewConsumer(groupID)
-
-	// NewResilientHandler ensures strict ordering by checking if a key is already retrying
-	resilientHandler := tracker.NewResilientHandler(handler)
-	consumer.Consume(ctx, []string{topic}, resilientHandler)
-}
-
-type MyOrderHandler struct{}
-
-func (h *MyOrderHandler) Handle(ctx context.Context, msg resilience.Message) error {
-	// Your business logic here
-	if err := process(msg.Value()); err != nil {
-		return err // Will be automatically retried by Kafka Resilience
-	}
-	return nil
+```go
+func (h *Handler) Handle(ctx context.Context, msg resilience.Message) error {
+    if err := process(msg.Value()); err != nil {
+        return err // automatically retried
+    }
+    return nil
 }
 ```
 
----
+See [`examples/sarama/`](examples/sarama/) for complete runnable examples:
 
-## Core Concepts
+| Example | Description |
+|:---|:---|
+| [`basic/`](examples/sarama/basic) | Automatic retry handling (recommended for most use cases) |
+| [`granular/`](examples/sarama/granular) | Manual `Redirect`/`Free` calls for full control |
+| [`strict/`](examples/sarama/strict) | Strict ordering guarantees during rebalances |
+| [`demo/`](examples/sarama/demo) | Interactive HTTP demo for testing and verification |
 
-### 1. The Retry Chain
-When a message fails in the main consumer, `kafka-resilience` does not block the partition. Instead, it:
-1.  **Acquires a Lock**: Records that this message key is now in "Retry Mode" by writing to the **Redirect Topic**.
-2.  **Redirects**: Produces the message to a **Retry Topic** with metadata (attempt count, next retry time).
-3.  **Acknowledges**: The main consumer continues to the next message.
-
-### 2. Strict Ordering (Key Locking)
-If a new message arrives on the **main topic** for a key that is already in the **Retry Topic**, `kafka-resilience` detects the lock and immediately redirects the new message to the end of the Retry Topic. This ensures that `order-1` (failed) is always processed before `order-1` (new), maintaining strict per-key ordering.
-
-### 3. Distributed State (Compact Topics)
-The "Redirect Topic" is a Kafka topic with `cleanup.policy=compact`. It stores the current state of which keys are "locked". Because it's a Kafka topic, all instances of your consumer group see the same state, allowing for seamless rebalancing and high availability.
-
-### 4. Backoff & DLQ
-Messages in the Retry Topic are only processed when their scheduled `next-retry-time` has passed. If a message exceeds `MaxRetries`, it is moved to the **DLQ Topic**.
-
----
-
-## Configuration
-
-| Field | Default | Description |
-| :--- | :--- | :--- |
-| `RetryTopicPrefix` | `"retry"` | Prefix for the retry topic name. |
-| `RedirectTopicPrefix` | `"redirect"` | Prefix for the state tracking topic. |
-| `DLQTopicPrefix` | `"dlq"` | Prefix for the Dead Letter Queue topic. |
-| `MaxRetries` | `5` | Maximum number of retry attempts. |
-| `RetryTopicPartitions` | `0` (auto) | Number of partitions for auxiliary topics. 0 means match original topic. |
-| `ReplicationFactor` | `1` | Replication factor for auto-created topics. For production, set to `3`. |
-| `FreeOnDLQ` | `false` | If true, releases the key lock when a message hits DLQ. If false, the key stays "stuck" (manual intervention required) to preserve absolute order. |
-| `DisableAutoTopicCreation`| `false` | Set to `true` if your Kafka environment doesn't allow automatic topic creation. |
-| `StateRestoreTimeoutMs` | `30000` | Max time to wait for state sync on startup. |
-
----
-
-## Architecture Diagram
+## How It Works
 
 ```mermaid
 graph TD
@@ -138,25 +80,169 @@ graph TD
     RetryWorker -->|7. Max Retries| DLQ[DLQ Topic]
 ```
 
----
+### The Retry Chain
 
-## Advanced: Rebalancing & Strict Consistency
+When a message fails in the main consumer, the library does not block the partition. Instead:
 
-By default, `kafka-resilience` is eventually consistent during consumer group rebalancing. There is a tiny race condition where a node might take over a partition but process a message *before* it has fully synced the latest locks from the Redirect Topic.
+1. **Lock**: Records that this message key is in retry mode by writing to the **Redirect Topic** (compacted).
+2. **Redirect**: Publishes the message to a **Retry Topic** with metadata (attempt count, next retry time).
+3. **Continue**: The main consumer moves to the next message.
 
-For applications requiring **absolute strictness** during rebalancing, you can use the `Synchronize` method in your consumer's `Setup` or `Cleanup` phase:
+### Strict Ordering (Key Locking)
+
+If a new message arrives on the main topic for a key that is already in the retry chain, the library detects the lock and immediately redirects the new message to the retry topic. This ensures that a failed `order-1` is always processed before a subsequent `order-1`, maintaining strict per-key ordering.
+
+Each lock uses a unique UUID as its redirect topic key, with local reference counting per business key. This correctly handles multiple in-flight messages with the same key — each lock is tracked independently, and the key is only considered "free" when all pending retries for it are resolved.
+
+### Distributed State
+
+The redirect topic uses `cleanup.policy=compact`, making it a distributed key-value store visible to all consumer instances. Because it's a Kafka topic, all instances of your consumer group see the same state. On startup, the coordinator restores state by reading the full compacted snapshot, ensuring recovery after restarts or rebalances.
+
+### Backoff & DLQ
+
+Messages in the retry topic are only processed when their scheduled next-retry-time has passed. If a message exceeds `MaxRetries`, it is moved to the **DLQ Topic**. The lock is optionally released based on the `FreeOnDLQ` setting.
+
+## Configuration
 
 ```go
-// Inside your Sarama ConsumerGroupHandler
-func (h *Handler) Setup(session sarama.ConsumerGroupSession) error {
-    // Blocks until local state is fully synced with the distributed log
-    return h.tracker.Synchronize(session.Context())
+cfg := resilience.NewDefaultConfig()
+```
+
+| Field | Default | Description |
+|:---|:---|:---|
+| `GroupID` | **(required)** | Consumer group ID for the retry worker |
+| `MaxRetries` | `5` | Max retry attempts before DLQ |
+| `RetryTopicPrefix` | `"retry"` | Prefix for retry topic (`retry_orders`) |
+| `RedirectTopicPrefix` | `"redirect"` | Prefix for state topic (`redirect_orders`) |
+| `DLQTopicPrefix` | `"dlq"` | Prefix for DLQ topic (`dlq_orders`) |
+| `RetryTopicPartitions` | `0` | Partitions for auxiliary topics. `0` = match original topic |
+| `ReplicationFactor` | `1` | Replication factor for auto-created topics. Use `3` in production |
+| `FreeOnDLQ` | `false` | Release lock when message hits DLQ. `false` = key stays locked for manual intervention |
+| `DisableAutoTopicCreation` | `false` | Disable automatic topic creation |
+| `StateRestoreTimeoutMs` | `30000` | Max wait for state restore on startup (ms) |
+| `StateRestoreIdleTimeoutMs` | `5000` | Idle timeout during state restoration (ms) |
+
+## Advanced Usage
+
+### Background Errors
+
+The tracker exposes background errors (coordinator failures, produce errors) via a channel. In production, you should drain this in a goroutine:
+
+```go
+go func() {
+    for err := range tracker.Errors() {
+        log.Error("resilience error", "err", err)
+    }
+}()
+```
+
+### Granular Control
+
+For full control over the retry flow, use `StartCoordinator` instead of `Start` and call `Redirect`/`Free` explicitly:
+
+```go
+// Start coordinator only (no automatic retry worker)
+tracker.StartCoordinator(ctx, "orders")
+
+// Run main and retry consumers yourself
+go mainConsumer.Consume(ctx, []string{"orders"}, handler)
+go retryConsumer.Consume(ctx, []string{tracker.RetryTopic("orders")}, handler)
+```
+
+```go
+func (h *ManualHandler) Handle(ctx context.Context, msg resilience.Message) error {
+    if h.tracker.IsInRetryChain(ctx, msg) {
+        return h.tracker.Redirect(ctx, msg, errors.New("predecessor in retry"))
+    }
+
+    if err := process(msg); err != nil {
+        return h.tracker.Redirect(ctx, msg, err)
+    }
+
+    // Release lock on successful retry
+    if isRetryMessage(msg) {
+        return h.tracker.Free(ctx, msg)
+    }
+    return nil
 }
 ```
 
-This ensures that the consumer never processes a message until it is 100% sure of the current lock state.
+See [`examples/sarama/granular`](examples/sarama/granular) for a complete working example.
 
----
+### Non-Retriable Errors
+
+Skip retries and send directly to DLQ:
+
+```go
+func (h *Handler) Handle(ctx context.Context, msg resilience.Message) error {
+    if !isValid(msg.Value()) {
+        return resilience.NewNotRetriableError(errors.New("invalid payload"))
+    }
+    return process(msg)
+}
+```
+
+### Strict Consistency on Rebalance
+
+By default, the coordinator is eventually consistent during rebalances. There is a small window where a node might process a message before it has fully synced the latest locks from the redirect topic.
+
+For strict ordering guarantees, call `Synchronize` in your consumer group's `Setup` handler:
+
+```go
+func (h *Handler) Setup(session sarama.ConsumerGroupSession) error {
+    return tracker.Synchronize(session.Context())
+}
+```
+
+This blocks until local state is fully synced with the distributed log, preventing any race condition during partition reassignment. See [`examples/sarama/strict`](examples/sarama/strict) for the full pattern.
+
+### Backoff Strategies
+
+```go
+// Exponential (default): 1s, 2s, 4s, 8s... capped at 5m
+saramaadapter.WithBackoff(resilience.NewExponentialBackoff())
+
+// Custom exponential
+backoff, _ := resilience.NewExponentialBackoffWithConfig(
+    500*time.Millisecond, // initial delay
+    2*time.Minute,        // max delay
+    3.0,                  // multiplier
+)
+
+// Constant: always 5s between retries
+backoff, _ := resilience.NewConstantBackoff(5 * time.Second)
+
+// Linear: 1s, 2s, 3s, 4s... capped at 1m
+backoff := resilience.NewLinearBackoff()
+```
+
+## Observability
+
+Built-in OpenTelemetry metrics:
+
+| Metric | Type | Description |
+|:---|:---|:---|
+| `kafka.resilience.retry.redirected` | Counter | Messages sent to retry topic |
+| `kafka.resilience.retry.processed` | Counter | Retried messages processed successfully |
+| `kafka.resilience.dlq.enqueued` | Counter | Messages sent to DLQ |
+| `kafka.resilience.backoff.wait` | Histogram | Backoff wait duration (seconds) |
+| `kafka.resilience.lock.acquired` | Counter | Lock acquisitions |
+| `kafka.resilience.lock.released` | Counter | Lock releases |
+| `kafka.resilience.state_restore.duration` | Histogram | State restore time on startup (seconds) |
+
+```go
+// Custom meter
+tracker, _ := saramaadapter.NewResilienceTracker(cfg, client,
+    saramaadapter.WithMeter(provider.Meter("my-app")))
+
+// Explicitly disable
+tracker, _ := saramaadapter.NewResilienceTracker(cfg, client,
+    saramaadapter.WithNoMetrics())
+```
+
+## Status
+
+This library has **not been extensively tested in production** yet. It is well covered by unit and integration tests, but real-world edge cases may still surface. If you run into issues or have questions, feel free to [open an issue](https://github.com/vmyroslav/kafka-resilience/issues) or reach out.
 
 ## License
 
