@@ -1,3 +1,9 @@
+[![Action Status](https://github.com/vmyroslav/kafka-resilience/actions/workflows/ci.yaml/badge.svg)](https://github.com/vmyroslav/kafka-resilience/actions/workflows/ci.yaml)
+[![codecov](https://codecov.io/gh/vmyroslav/kafka-resilience/graph/badge.svg?token=I4VAB76KRW)](https://codecov.io/gh/vmyroslav/kafka-resilience)
+[![Go Report Card](https://goreportcard.com/badge/github.com/vmyroslav/kafka-resilience)](https://goreportcard.com/report/github.com/vmyroslav/kafka-resilience)
+[![Godoc](https://pkg.go.dev/badge/github.com/vmyroslav/kafka-resilience)](https://pkg.go.dev/github.com/vmyroslav/kafka-resilience)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 # Kafka Resilience
 
 A Go library for **non-blocking Kafka consumer retries** with **strict per-key ordering guarantees**.
