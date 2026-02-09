@@ -11,7 +11,6 @@ type managerOptions struct {
 	logger      resilience.Logger
 	coordinator resilience.StateCoordinator
 	backoff     resilience.BackoffStrategy
-	errCh       chan<- error
 	meter       metric.Meter
 }
 
@@ -46,7 +45,6 @@ func NewResilienceTracker(cfg *resilience.Config, client sarama.Client, opts ...
 			producerAdapter,
 			consumerFactory,
 			adminAdapter,
-			options.errCh,
 			options.meter,
 		)
 	}
@@ -89,13 +87,6 @@ func WithCoordinator(coordinator resilience.StateCoordinator) ManagerOption {
 func WithBackoff(backoff resilience.BackoffStrategy) ManagerOption {
 	return func(o *managerOptions) {
 		o.backoff = backoff
-	}
-}
-
-// WithErrorChannel sets a custom error channel for background errors.
-func WithErrorChannel(errCh chan<- error) ManagerOption {
-	return func(o *managerOptions) {
-		o.errCh = errCh
 	}
 }
 

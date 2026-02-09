@@ -36,7 +36,7 @@ func TestErrorTracker_Redirect_Rollback(t *testing.T) {
 
 	// Coordinator mocks: Acquire succeeds, Release MUST be called
 	mockCoordinator := &StateCoordinatorMock{
-		AcquireFunc: func(_ context.Context, _ *InternalMessage, _ string) error {
+		AcquireFunc: func(_ context.Context, _ string, _ *InternalMessage) error {
 			return nil
 		},
 		ReleaseFunc: func(_ context.Context, _ *InternalMessage) error {
@@ -99,7 +99,7 @@ func TestErrorTracker_Redirect_RollbackFailure_LogsCriticalError(t *testing.T) {
 
 	// Coordinator: Acquire succeeds, but Release ALSO fails (worst case)
 	mockCoordinator := &StateCoordinatorMock{
-		AcquireFunc: func(_ context.Context, _ *InternalMessage, _ string) error {
+		AcquireFunc: func(_ context.Context, _ string, _ *InternalMessage) error {
 			return nil
 		},
 		ReleaseFunc: func(_ context.Context, _ *InternalMessage) error {
@@ -167,7 +167,7 @@ func TestErrorTracker_Redirect_RollbackSuccess_KeyNotLocked(t *testing.T) {
 	}
 
 	mockCoordinator := &StateCoordinatorMock{
-		AcquireFunc: func(_ context.Context, msg *InternalMessage, _ string) error {
+		AcquireFunc: func(_ context.Context, _ string, msg *InternalMessage) error {
 			lockState[string(msg.key)] = true
 			return nil
 		},
@@ -229,7 +229,7 @@ func TestErrorTracker_NotRetriableError_GoesDirectlyToDLQ(t *testing.T) {
 	}
 
 	mockCoordinator := &StateCoordinatorMock{
-		AcquireFunc: func(_ context.Context, _ *InternalMessage, _ string) error {
+		AcquireFunc: func(_ context.Context, _ string, _ *InternalMessage) error {
 			t.Error("Acquire should NOT be called for NotRetriableError")
 			return nil
 		},
@@ -383,7 +383,7 @@ func TestErrorTracker_Redirect_HappyPath(t *testing.T) {
 	}
 
 	mockCoordinator := &StateCoordinatorMock{
-		AcquireFunc: func(_ context.Context, _ *InternalMessage, _ string) error {
+		AcquireFunc: func(_ context.Context, _ string, _ *InternalMessage) error {
 			return nil
 		},
 	}
@@ -432,7 +432,7 @@ func TestErrorTracker_Redirect_AlreadyInRetry_SkipsLockAcquisition(t *testing.T)
 	}
 
 	mockCoordinator := &StateCoordinatorMock{
-		AcquireFunc: func(_ context.Context, _ *InternalMessage, _ string) error {
+		AcquireFunc: func(_ context.Context, _ string, _ *InternalMessage) error {
 			t.Error("Acquire should NOT be called for messages already in retry")
 			return nil
 		},
@@ -495,7 +495,7 @@ func TestErrorTracker_Redirect_IncrementsAttemptCounter(t *testing.T) {
 	}
 
 	mockCoordinator := &StateCoordinatorMock{
-		AcquireFunc: func(_ context.Context, _ *InternalMessage, _ string) error {
+		AcquireFunc: func(_ context.Context, _ string, _ *InternalMessage) error {
 			return nil
 		},
 	}
@@ -566,7 +566,7 @@ func TestErrorTracker_Redirect_PreservesUserHeaders(t *testing.T) {
 	}
 
 	mockCoordinator := &StateCoordinatorMock{
-		AcquireFunc: func(_ context.Context, _ *InternalMessage, _ string) error {
+		AcquireFunc: func(_ context.Context, _ string, _ *InternalMessage) error {
 			return nil
 		},
 	}
@@ -642,7 +642,7 @@ func TestErrorTracker_Redirect_PreservesOriginalTopic(t *testing.T) {
 	}
 
 	mockCoordinator := &StateCoordinatorMock{
-		AcquireFunc: func(_ context.Context, _ *InternalMessage, _ string) error {
+		AcquireFunc: func(_ context.Context, _ string, _ *InternalMessage) error {
 			return nil
 		},
 	}
@@ -699,7 +699,7 @@ func TestErrorTracker_Redirect_AcquireFailure_ReturnsError(t *testing.T) {
 	}
 
 	mockCoordinator := &StateCoordinatorMock{
-		AcquireFunc: func(_ context.Context, _ *InternalMessage, _ string) error {
+		AcquireFunc: func(_ context.Context, _ string, _ *InternalMessage) error {
 			return errors.New("coordinator unavailable")
 		},
 	}
@@ -749,7 +749,7 @@ func TestErrorTracker_Redirect_SetsRetryMetadataHeaders(t *testing.T) {
 	}
 
 	mockCoordinator := &StateCoordinatorMock{
-		AcquireFunc: func(_ context.Context, msg *InternalMessage, _ string) error {
+		AcquireFunc: func(_ context.Context, _ string, msg *InternalMessage) error {
 			// Simulate Acquire setting the ID header
 			_ = SetHeader[string](msg.headerData, HeaderID, "generated-uuid-123")
 			return nil
@@ -1130,7 +1130,7 @@ func TestErrorTracker_MaxRetriesExceeded_SendsToDLQ(t *testing.T) {
 	}
 
 	mockCoordinator := &StateCoordinatorMock{
-		AcquireFunc: func(_ context.Context, _ *InternalMessage, _ string) error {
+		AcquireFunc: func(_ context.Context, _ string, _ *InternalMessage) error {
 			return nil
 		},
 	}
@@ -1663,7 +1663,7 @@ func TestErrorTracker_NewResilientHandler_KeyInRetryChain_AutoRedirects(t *testi
 		IsLockedFunc: func(_ context.Context, _ *InternalMessage) bool {
 			return true // Key is locked
 		},
-		AcquireFunc: func(_ context.Context, _ *InternalMessage, _ string) error {
+		AcquireFunc: func(_ context.Context, _ string, _ *InternalMessage) error {
 			return nil
 		},
 	}
@@ -1772,7 +1772,7 @@ func TestErrorTracker_NewResilientHandler_Failure_StartsRetryChain(t *testing.T)
 		IsLockedFunc: func(_ context.Context, _ *InternalMessage) bool {
 			return false // Key is NOT locked
 		},
-		AcquireFunc: func(_ context.Context, _ *InternalMessage, _ string) error {
+		AcquireFunc: func(_ context.Context, _ string, _ *InternalMessage) error {
 			return nil
 		},
 	}

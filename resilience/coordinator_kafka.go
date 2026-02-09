@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 	"slices"
 	"sync"
 	"time"
@@ -26,7 +27,7 @@ type KafkaStateCoordinator struct {
 	local           *localStateCoordinator
 	instruments     *coordinatorInstruments
 
-	errors          chan<- error
+	errCh           chan error
 	consumedOffsets map[int32]int64
 	instanceID      string
 	topic           string
@@ -44,7 +45,6 @@ func NewKafkaStateCoordinator(
 	producer Producer,
 	consumerFactory ConsumerFactory,
 	admin Admin,
-	errCh chan<- error,
 	meter metric.Meter,
 ) *KafkaStateCoordinator {
 	k := &KafkaStateCoordinator{
@@ -54,7 +54,7 @@ func NewKafkaStateCoordinator(
 		admin:           admin,
 		cfg:             cfg,
 		logger:          logger,
-		errors:          errCh,
+		errCh:           make(chan error, 16),
 		instruments:     newCoordinatorInstruments(resolveMeter(meter)),
 		instanceID:      uuid.New().String(),
 		consumedOffsets: make(map[int32]int64),
@@ -62,6 +62,12 @@ func NewKafkaStateCoordinator(
 	k.offsetsCond = sync.NewCond(&k.mu)
 
 	return k
+}
+
+// Errors returns a read-only channel that receives errors from background goroutines
+// (e.g., the redirect consumer). The channel is buffered and never closed.
+func (k *KafkaStateCoordinator) Errors() <-chan error {
+	return k.errCh
 }
 
 // IsLocked checks if a message's key is currently locked in the local state.
@@ -354,7 +360,6 @@ func (k *KafkaStateCoordinator) Synchronize(ctx context.Context) error {
 
 // isCaughtUp checks if consumedOffsets have reached targetOffsets.
 // Caller must hold k.mu (at least RLock).
-// TODO: lock here or in caller?
 func (k *KafkaStateCoordinator) isCaughtUp(targetOffsets map[int32]int64) bool {
 	return isCaughtUpOffsets(k.consumedOffsets, targetOffsets)
 }
@@ -474,14 +479,9 @@ func (k *KafkaStateCoordinator) restoreState(ctx context.Context, topic string) 
 
 	targetOffsets := metadata[0].PartitionOffsets()
 
-	hasData := false
-
-	for _, offset := range targetOffsets {
-		if offset > 0 {
-			hasData = true
-			break
-		}
-	}
+	hasData := slices.ContainsFunc(slices.Collect(maps.Values(targetOffsets)), func(o int64) bool {
+		return o > 0
+	})
 
 	if !hasData {
 		k.logger.Debug("redirect topic is empty, skipping restore")
@@ -499,8 +499,9 @@ func (k *KafkaStateCoordinator) restoreState(ctx context.Context, topic string) 
 	defer func() {
 		// clean up ephemeral group
 		go func() {
-			// TODO: add retry?
-			_ = k.admin.DeleteConsumerGroup(context.Background(), refillCfg.GroupID)
+			if err := k.admin.DeleteConsumerGroup(context.Background(), refillCfg.GroupID); err != nil {
+				k.logger.Warn("failed to delete ephemeral consumer group", "group", refillCfg.GroupID, "error", err)
+			}
 		}()
 	}()
 
@@ -549,7 +550,6 @@ func (k *KafkaStateCoordinator) startRedirectConsumer(ctx context.Context, topic
 		return err
 	}
 
-	// TODO: propagate errors back to the tracker?
 	k.wg.Add(1)
 
 	go func() {
@@ -567,17 +567,15 @@ func (k *KafkaStateCoordinator) startRedirectConsumer(ctx context.Context, topic
 			}
 
 			if err != nil {
-				if k.errors != nil {
-					select {
-					case k.errors <- err:
-					default:
-						k.logger.Warn("error channel full, dropping background error", "error", err)
-					}
-				} else {
-					k.logger.Error("background redirect consumer failed, restarting",
-						"error", err,
-						"retry_in", backoff,
-					)
+				k.logger.Error("background redirect consumer failed, restarting",
+					"error", err,
+					"retry_in", backoff,
+				)
+
+				select {
+				case k.errCh <- err:
+				default:
+					k.logger.Warn("error channel full, dropping background error", "error", err)
 				}
 			}
 			// wait before restarting

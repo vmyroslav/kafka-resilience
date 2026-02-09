@@ -38,6 +38,10 @@ type StateCoordinator interface {
 	// The context controls the shutdown timeout - if context expires, Close returns immediately
 	// with an error, potentially leaving goroutines running.
 	Close(ctx context.Context) error
+
+	// Errors returns a read-only channel of background errors from the coordinator.
+	// Implementations without background goroutines may return nil.
+	Errors() <-chan error
 }
 
 // Producer publishes messages to Kafka topics.

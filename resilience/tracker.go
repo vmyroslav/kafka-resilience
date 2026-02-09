@@ -178,6 +178,12 @@ func (t *ErrorTracker) Close(ctx context.Context) error {
 	}
 }
 
+// Errors returns a read-only channel that receives background errors from the coordinator.
+// Returns nil if the underlying coordinator does not produce background errors.
+func (t *ErrorTracker) Errors() <-chan error {
+	return t.coordinator.Errors()
+}
+
 // ensureTopicsExist creates retry and DLQ topics if they don't exist.
 // Queries primary topic partition count and creates topics with matching partitions.
 func (t *ErrorTracker) ensureTopicsExist(ctx context.Context, topic string) error {

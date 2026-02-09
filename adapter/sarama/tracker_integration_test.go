@@ -147,7 +147,6 @@ func TestIntegration_SaramaAdapterFullFlow(t *testing.T) {
 
 	coordinator := resilience.NewKafkaStateCoordinator(
 		cfg, sharedLogger, adapters.Producer, adapters.ConsumerFactory, adapters.Admin,
-		make(chan error, 10),
 		nil,
 	)
 
@@ -387,7 +386,6 @@ func TestIntegration_ChainRetry(t *testing.T) {
 
 	coordinator := resilience.NewKafkaStateCoordinator(
 		cfg, sharedLogger, adapters.Producer, adapters.ConsumerFactory, adapters.Admin,
-		make(chan error, 10),
 		nil,
 	)
 
@@ -532,7 +530,6 @@ func TestIntegration_DLQ(t *testing.T) {
 
 	coordinator := resilience.NewKafkaStateCoordinator(
 		cfg, sharedLogger, adapters.Producer, adapters.ConsumerFactory, adapters.Admin,
-		make(chan error, 10),
 		nil,
 	)
 
@@ -734,7 +731,6 @@ func TestIntegration_DLQ_WithFreeOnDLQ(t *testing.T) {
 
 	coordinator := resilience.NewKafkaStateCoordinator(
 		cfg, sharedLogger, adapters.Producer, adapters.ConsumerFactory, adapters.Admin,
-		make(chan error, 10),
 		nil,
 	)
 
@@ -922,7 +918,6 @@ func TestIntegration_StrictOrdering(t *testing.T) {
 
 	coordinator := resilience.NewKafkaStateCoordinator(
 		cfg, sharedLogger, adapters.Producer, adapters.ConsumerFactory, adapters.Admin,
-		make(chan error, 10),
 		nil,
 	)
 
@@ -1129,7 +1124,6 @@ func TestIntegration_NotRetriableError(t *testing.T) {
 
 	coordinator := resilience.NewKafkaStateCoordinator(
 		cfg, sharedLogger, adapters.Producer, adapters.ConsumerFactory, adapters.Admin,
-		make(chan error, 10),
 		nil,
 	)
 
@@ -1317,7 +1311,6 @@ func TestIntegration_ConcurrentKeysIndependence(t *testing.T) {
 
 	coordinator := resilience.NewKafkaStateCoordinator(
 		cfg, sharedLogger, adapters.Producer, adapters.ConsumerFactory, adapters.Admin,
-		make(chan error, 10),
 		nil,
 	)
 

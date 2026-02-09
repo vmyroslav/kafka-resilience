@@ -37,7 +37,6 @@ func TestKafkaStateCoordinator_Acquire(t *testing.T) {
 		mockProducer,
 		mockFactory,
 		mockAdmin,
-		make(chan error, 1),
 		nil,
 	)
 
@@ -91,7 +90,6 @@ func TestKafkaStateCoordinator_Release(t *testing.T) {
 		mockProducer,
 		&ConsumerFactoryMock{},
 		&AdminMock{},
-		make(chan error, 1),
 		nil,
 	)
 
@@ -195,7 +193,6 @@ func TestKafkaStateCoordinator_Start_RestoresState(t *testing.T) {
 		&ProducerMock{},
 		mockFactory,
 		mockAdmin,
-		make(chan error, 1),
 		nil,
 	)
 
@@ -228,7 +225,6 @@ func TestKafkaStateCoordinator_Acquire_ProducerError(t *testing.T) {
 		mockProducer,
 		&ConsumerFactoryMock{},
 		&AdminMock{},
-		make(chan error),
 		nil,
 	)
 
@@ -248,7 +244,6 @@ func TestKafkaStateCoordinator_ProcessRedirect_Filter(t *testing.T) {
 		&ProducerMock{},
 		&ConsumerFactoryMock{},
 		&AdminMock{},
-		nil,
 		nil,
 	)
 
@@ -300,7 +295,6 @@ func TestKafkaStateCoordinator_ForeignTombstone(t *testing.T) {
 		&ProducerMock{},
 		&ConsumerFactoryMock{},
 		&AdminMock{},
-		nil,
 		nil,
 	)
 
@@ -405,7 +399,6 @@ func TestKafkaStateCoordinator_Rebalance_Simulation(t *testing.T) {
 		&ProducerMock{},
 		mockFactory,
 		mockAdmin,
-		make(chan error, 1),
 		nil,
 	)
 
@@ -427,7 +420,6 @@ func TestKafkaStateCoordinator_Synchronize_TopicNotStarted(t *testing.T) {
 		&ProducerMock{},
 		&ConsumerFactoryMock{},
 		&AdminMock{},
-		nil,
 		nil,
 	)
 
@@ -456,7 +448,6 @@ func TestKafkaStateCoordinator_Synchronize_EmptyRedirectTopic(t *testing.T) {
 		&ProducerMock{},
 		&ConsumerFactoryMock{},
 		mockAdmin,
-		nil,
 		nil,
 	)
 
@@ -489,7 +480,6 @@ func TestKafkaStateCoordinator_Synchronize_AlreadyCaughtUp(t *testing.T) {
 		&ProducerMock{},
 		&ConsumerFactoryMock{},
 		mockAdmin,
-		nil,
 		nil,
 	)
 
@@ -526,7 +516,6 @@ func TestKafkaStateCoordinator_Synchronize_BlocksUntilCaughtUp(t *testing.T) {
 		&ProducerMock{},
 		&ConsumerFactoryMock{},
 		mockAdmin,
-		nil,
 		nil,
 	)
 
@@ -588,7 +577,6 @@ func TestKafkaStateCoordinator_Synchronize_ContextCancellation(t *testing.T) {
 		&ProducerMock{},
 		&ConsumerFactoryMock{},
 		mockAdmin,
-		nil,
 		nil,
 	)
 

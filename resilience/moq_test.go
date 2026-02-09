@@ -751,11 +751,14 @@ var _ StateCoordinator = &StateCoordinatorMock{}
 //
 //		// make and configure a mocked StateCoordinator
 //		mockedStateCoordinator := &StateCoordinatorMock{
-//			AcquireFunc: func(ctx context.Context, msg *InternalMessage, originalTopic string) error {
+//			AcquireFunc: func(ctx context.Context, originalTopic string, msg *InternalMessage) error {
 //				panic("mock out the Acquire method")
 //			},
 //			CloseFunc: func(ctx context.Context) error {
 //				panic("mock out the Close method")
+//			},
+//			ErrorsFunc: func() <-chan error {
+//				panic("mock out the Errors method")
 //			},
 //			IsLockedFunc: func(ctx context.Context, msg *InternalMessage) bool {
 //				panic("mock out the IsLocked method")
@@ -777,10 +780,13 @@ var _ StateCoordinator = &StateCoordinatorMock{}
 //	}
 type StateCoordinatorMock struct {
 	// AcquireFunc mocks the Acquire method.
-	AcquireFunc func(ctx context.Context, msg *InternalMessage, originalTopic string) error
+	AcquireFunc func(ctx context.Context, originalTopic string, msg *InternalMessage) error
 
 	// CloseFunc mocks the Close method.
 	CloseFunc func(ctx context.Context) error
+
+	// ErrorsFunc mocks the Errors method.
+	ErrorsFunc func() <-chan error
 
 	// IsLockedFunc mocks the IsLocked method.
 	IsLockedFunc func(ctx context.Context, msg *InternalMessage) bool
@@ -800,16 +806,18 @@ type StateCoordinatorMock struct {
 		Acquire []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
-			// Msg is the msg argument value.
-			Msg *InternalMessage
 			// OriginalTopic is the originalTopic argument value.
 			OriginalTopic string
+			// Msg is the msg argument value.
+			Msg *InternalMessage
 		}
 		// Close holds details about calls to the Close method.
 		Close []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
 		}
+		// Errors holds details about calls to the Errors method.
+		Errors []struct{}
 		// IsLocked holds details about calls to the IsLocked method.
 		IsLocked []struct {
 			// Ctx is the ctx argument value.
@@ -839,6 +847,7 @@ type StateCoordinatorMock struct {
 	}
 	lockAcquire     sync.RWMutex
 	lockClose       sync.RWMutex
+	lockErrors      sync.RWMutex
 	lockIsLocked    sync.RWMutex
 	lockRelease     sync.RWMutex
 	lockStart       sync.RWMutex
@@ -852,17 +861,17 @@ func (mock *StateCoordinatorMock) Acquire(ctx context.Context, originalTopic str
 	}
 	callInfo := struct {
 		Ctx           context.Context
-		Msg           *InternalMessage
 		OriginalTopic string
+		Msg           *InternalMessage
 	}{
 		Ctx:           ctx,
-		Msg:           msg,
 		OriginalTopic: originalTopic,
+		Msg:           msg,
 	}
 	mock.lockAcquire.Lock()
 	mock.calls.Acquire = append(mock.calls.Acquire, callInfo)
 	mock.lockAcquire.Unlock()
-	return mock.AcquireFunc(ctx, msg, originalTopic)
+	return mock.AcquireFunc(ctx, originalTopic, msg)
 }
 
 // AcquireCalls gets all the calls that were made to Acquire.
@@ -871,13 +880,13 @@ func (mock *StateCoordinatorMock) Acquire(ctx context.Context, originalTopic str
 //	len(mockedStateCoordinator.AcquireCalls())
 func (mock *StateCoordinatorMock) AcquireCalls() []struct {
 	Ctx           context.Context
-	Msg           *InternalMessage
 	OriginalTopic string
+	Msg           *InternalMessage
 } {
 	var calls []struct {
 		Ctx           context.Context
-		Msg           *InternalMessage
 		OriginalTopic string
+		Msg           *InternalMessage
 	}
 	mock.lockAcquire.RLock()
 	calls = mock.calls.Acquire
@@ -914,6 +923,30 @@ func (mock *StateCoordinatorMock) CloseCalls() []struct {
 	mock.lockClose.RLock()
 	calls = mock.calls.Close
 	mock.lockClose.RUnlock()
+	return calls
+}
+
+// Errors calls ErrorsFunc.
+func (mock *StateCoordinatorMock) Errors() <-chan error {
+	if mock.ErrorsFunc == nil {
+		panic("StateCoordinatorMock.ErrorsFunc: method is nil but StateCoordinator.Errors was just called")
+	}
+	callInfo := struct{}{}
+	mock.lockErrors.Lock()
+	mock.calls.Errors = append(mock.calls.Errors, callInfo)
+	mock.lockErrors.Unlock()
+	return mock.ErrorsFunc()
+}
+
+// ErrorsCalls gets all the calls that were made to Errors.
+// Check the length with:
+//
+//	len(mockedStateCoordinator.ErrorsCalls())
+func (mock *StateCoordinatorMock) ErrorsCalls() []struct{} {
+	var calls []struct{}
+	mock.lockErrors.RLock()
+	calls = mock.calls.Errors
+	mock.lockErrors.RUnlock()
 	return calls
 }
 

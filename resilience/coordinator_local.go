@@ -83,6 +83,11 @@ func (l *localStateCoordinator) Close(_ context.Context) error {
 	return nil
 }
 
+// Errors returns nil because localStateCoordinator has no background goroutines.
+func (l *localStateCoordinator) Errors() <-chan error {
+	return nil
+}
+
 // topic map ['topic-name' => ['topic-key' => refCount]].
 // Reference counting ensures keys are unlocked only when all messages with that key complete.
 type lockMap map[string]map[string]int
