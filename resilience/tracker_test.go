@@ -420,7 +420,7 @@ func TestErrorTracker_Redirect_HappyPath(t *testing.T) {
 }
 
 func TestErrorTracker_Redirect_AlreadyInRetry_SkipsLockAcquisition(t *testing.T) {
-	// When a message is already in retry (has HeaderRetry="true"),
+	// When a message is already in retry (has headerRetry="true"),
 	// Redirect should NOT call Acquire again - the lock is already held
 	var producedMsg Message
 
@@ -457,9 +457,9 @@ func TestErrorTracker_Redirect_AlreadyInRetry_SkipsLockAcquisition(t *testing.T)
 
 	// Message that's already in the retry chain
 	headers := &HeaderList{}
-	_ = SetHeader[string](headers, HeaderRetry, "true")
-	_ = SetHeader[string](headers, HeaderID, "existing-lock-id")
-	_ = SetHeader[string](headers, HeaderTopic, "orders")
+	_ = SetHeader[string](headers, headerRetry, "true")
+	_ = SetHeader[string](headers, headerID, "existing-lock-id")
+	_ = SetHeader[string](headers, headerTopic, "orders")
 	_ = SetHeader[int](headers, HeaderRetryAttempt, 1)
 
 	msg := &InternalMessage{
@@ -478,7 +478,7 @@ func TestErrorTracker_Redirect_AlreadyInRetry_SkipsLockAcquisition(t *testing.T)
 	assert.Len(t, mockProducer.ProduceCalls(), 1)
 
 	// Verify the ID header is preserved
-	idBytes, ok := producedMsg.Headers().Get(HeaderID)
+	idBytes, ok := producedMsg.Headers().Get(headerID)
 	assert.True(t, ok)
 	assert.Equal(t, "existing-lock-id", string(idBytes))
 }
@@ -534,9 +534,9 @@ func TestErrorTracker_Redirect_IncrementsAttemptCounter(t *testing.T) {
 
 	// Second redirect (simulating retry message with attempt=1)
 	headers := &HeaderList{}
-	_ = SetHeader[string](headers, HeaderRetry, "true")
-	_ = SetHeader[string](headers, HeaderID, "lock-id")
-	_ = SetHeader[string](headers, HeaderTopic, "orders")
+	_ = SetHeader[string](headers, headerRetry, "true")
+	_ = SetHeader[string](headers, headerID, "lock-id")
+	_ = SetHeader[string](headers, headerTopic, "orders")
 	_ = SetHeader[int](headers, HeaderRetryAttempt, 1)
 
 	msg2 := &InternalMessage{
@@ -621,7 +621,7 @@ func TestErrorTracker_Redirect_PreservesUserHeaders(t *testing.T) {
 	_, ok = producedMsg.Headers().Get(HeaderRetryAttempt)
 	assert.True(t, ok, "retry attempt header should be added")
 
-	_, ok = producedMsg.Headers().Get(HeaderRetry)
+	_, ok = producedMsg.Headers().Get(headerRetry)
 	assert.True(t, ok, "retry flag header should be added")
 }
 
@@ -666,9 +666,9 @@ func TestErrorTracker_Redirect_PreservesOriginalTopic(t *testing.T) {
 
 	// Message coming from retry topic with original topic in headers
 	headers := &HeaderList{}
-	_ = SetHeader[string](headers, HeaderRetry, "true")
-	_ = SetHeader[string](headers, HeaderID, "lock-id")
-	_ = SetHeader[string](headers, HeaderTopic, "original-orders") // Original topic
+	_ = SetHeader[string](headers, headerRetry, "true")
+	_ = SetHeader[string](headers, headerID, "lock-id")
+	_ = SetHeader[string](headers, headerTopic, "original-orders") // Original topic
 	_ = SetHeader[int](headers, HeaderRetryAttempt, 1)
 
 	msg := &InternalMessage{
@@ -684,7 +684,7 @@ func TestErrorTracker_Redirect_PreservesOriginalTopic(t *testing.T) {
 	assert.Equal(t, "retry_original-orders", producedTopic)
 
 	// Original topic header should be preserved
-	topicHeader, ok := producedMsg.Headers().Get(HeaderTopic)
+	topicHeader, ok := producedMsg.Headers().Get(headerTopic)
 	assert.True(t, ok)
 	assert.Equal(t, "original-orders", string(topicHeader))
 }
@@ -751,7 +751,7 @@ func TestErrorTracker_Redirect_SetsRetryMetadataHeaders(t *testing.T) {
 	mockCoordinator := &StateCoordinatorMock{
 		AcquireFunc: func(_ context.Context, _ string, msg *InternalMessage) error {
 			// Simulate Acquire setting the ID header
-			_ = SetHeader[string](msg.headerData, HeaderID, "generated-uuid-123")
+			_ = SetHeader[string](msg.headerData, headerID, "generated-uuid-123")
 			return nil
 		},
 	}
@@ -804,16 +804,16 @@ func TestErrorTracker_Redirect_SetsRetryMetadataHeaders(t *testing.T) {
 	assert.True(t, ok, "HeaderRetryReason should be set")
 	assert.Equal(t, "business error", string(reasonBytes))
 
-	idBytes, ok := headers.Get(HeaderID)
-	assert.True(t, ok, "HeaderID should be set")
+	idBytes, ok := headers.Get(headerID)
+	assert.True(t, ok, "headerID should be set")
 	assert.Equal(t, "generated-uuid-123", string(idBytes))
 
-	retryBytes, ok := headers.Get(HeaderRetry)
-	assert.True(t, ok, "HeaderRetry should be set")
+	retryBytes, ok := headers.Get(headerRetry)
+	assert.True(t, ok, "headerRetry should be set")
 	assert.Equal(t, "true", string(retryBytes))
 
-	topicBytes, ok := headers.Get(HeaderTopic)
-	assert.True(t, ok, "HeaderTopic should be set")
+	topicBytes, ok := headers.Get(headerTopic)
+	assert.True(t, ok, "headerTopic should be set")
 	assert.Equal(t, "orders", string(topicBytes))
 }
 
@@ -844,8 +844,8 @@ func TestErrorTracker_Free_HappyPath(t *testing.T) {
 	require.NoError(t, err)
 
 	headers := &HeaderList{}
-	_ = SetHeader[string](headers, HeaderID, "lock-id-123")
-	_ = SetHeader[string](headers, HeaderTopic, "orders")
+	_ = SetHeader[string](headers, headerID, "lock-id-123")
+	_ = SetHeader[string](headers, headerTopic, "orders")
 
 	msg := &InternalMessage{
 		topic:      "retry_orders",
@@ -1023,7 +1023,7 @@ func TestErrorTracker_SendToDLQ_PreservesOriginalTopicFromHeader(t *testing.T) {
 
 	// Message from retry topic with original topic in header
 	headers := &HeaderList{}
-	_ = SetHeader[string](headers, HeaderTopic, "original-orders")
+	_ = SetHeader[string](headers, headerTopic, "original-orders")
 
 	msg := &InternalMessage{
 		topic:      "retry_original-orders",
@@ -1066,7 +1066,7 @@ func TestErrorTracker_SendToDLQ_IncludesRetryAttemptCount(t *testing.T) {
 	// Message that has gone through 3 retry attempts
 	headers := &HeaderList{}
 	_ = SetHeader[int](headers, HeaderRetryAttempt, 3)
-	_ = SetHeader[string](headers, HeaderTopic, "orders")
+	_ = SetHeader[string](headers, headerTopic, "orders")
 
 	msg := &InternalMessage{
 		topic:      "retry_orders",
@@ -1158,9 +1158,9 @@ func TestErrorTracker_MaxRetriesExceeded_SendsToDLQ(t *testing.T) {
 	// Message that has already reached max retries
 	headers := &HeaderList{}
 	_ = SetHeader[int](headers, HeaderRetryAttempt, 3) // Equal to MaxRetries
-	_ = SetHeader[string](headers, HeaderRetry, "true")
-	_ = SetHeader[string](headers, HeaderID, "lock-id")
-	_ = SetHeader[string](headers, HeaderTopic, "orders")
+	_ = SetHeader[string](headers, headerRetry, "true")
+	_ = SetHeader[string](headers, headerID, "lock-id")
+	_ = SetHeader[string](headers, headerTopic, "orders")
 
 	msg := &InternalMessage{
 		topic:      "retry_orders",
@@ -1213,9 +1213,9 @@ func TestErrorTracker_MaxRetriesExceeded_FreeOnDLQ_True_ReleasesLock(t *testing.
 
 	headers := &HeaderList{}
 	_ = SetHeader[int](headers, HeaderRetryAttempt, 3)
-	_ = SetHeader[string](headers, HeaderRetry, "true")
-	_ = SetHeader[string](headers, HeaderID, "lock-id")
-	_ = SetHeader[string](headers, HeaderTopic, "orders")
+	_ = SetHeader[string](headers, headerRetry, "true")
+	_ = SetHeader[string](headers, headerID, "lock-id")
+	_ = SetHeader[string](headers, headerTopic, "orders")
 
 	msg := &InternalMessage{
 		topic:      "retry_orders",
@@ -1265,9 +1265,9 @@ func TestErrorTracker_MaxRetriesExceeded_FreeOnDLQ_False_KeepsLock(t *testing.T)
 
 	headers := &HeaderList{}
 	_ = SetHeader[int](headers, HeaderRetryAttempt, 3)
-	_ = SetHeader[string](headers, HeaderRetry, "true")
-	_ = SetHeader[string](headers, HeaderID, "lock-id")
-	_ = SetHeader[string](headers, HeaderTopic, "orders")
+	_ = SetHeader[string](headers, headerRetry, "true")
+	_ = SetHeader[string](headers, headerID, "lock-id")
+	_ = SetHeader[string](headers, headerTopic, "orders")
 
 	msg := &InternalMessage{
 		topic:      "retry_orders",

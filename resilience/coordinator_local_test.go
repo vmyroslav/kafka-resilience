@@ -129,13 +129,13 @@ func TestLocalStateCoordinator_Release_WithHeader(t *testing.T) {
 	msg := &InternalMessage{topic: "orders", key: []byte("key1"), headerData: &HeaderList{}}
 	_ = coordinator.Acquire(ctx, "orders", msg)
 
-	// release using a message with explicit HeaderTopic (simulating redirect message)
+	// release using a message with explicit headerTopic (simulating redirect message)
 	releaseMsg := &InternalMessage{
 		topic:      "redirect_orders", // different topic
 		key:        []byte("key1"),
 		headerData: &HeaderList{},
 	}
-	releaseMsg.headerData.Set(HeaderTopic, []byte("orders"))
+	releaseMsg.headerData.Set(headerTopic, []byte("orders"))
 
 	err := coordinator.Release(ctx, releaseMsg)
 	require.NoError(t, err)

@@ -8,6 +8,17 @@ import (
 
 const meterName = "github.com/vmyroslav/kafka-resilience"
 
+// Metric name constants. Use these to filter or identify metrics emitted by this library.
+const (
+	MetricRetryRedirected = "kafka.resilience.retry.redirected"       // Counter: messages sent to the retry topic.
+	MetricRetryProcessed  = "kafka.resilience.retry.processed"        // Counter: retried messages processed successfully.
+	MetricDLQEnqueued     = "kafka.resilience.dlq.enqueued"           // Counter: messages sent to the dead letter queue.
+	MetricBackoffWait     = "kafka.resilience.backoff.wait"           // Histogram (seconds): time spent waiting during retry backoff.
+	MetricLockAcquired    = "kafka.resilience.lock.acquired"          // Counter: distributed lock acquisitions.
+	MetricLockReleased    = "kafka.resilience.lock.released"          // Counter: distributed lock releases.
+	MetricStateRestoreDur = "kafka.resilience.state_restore.duration" // Histogram (seconds): time to restore coordinator state on startup.
+)
+
 // trackerInstruments holds OTel metric instruments used by ErrorTracker.
 type trackerInstruments struct {
 	retryRedirected metric.Int64Counter
@@ -20,25 +31,25 @@ func newTrackerInstruments(meter metric.Meter) *trackerInstruments {
 	ins := &trackerInstruments{}
 
 	ins.retryRedirected, _ = meter.Int64Counter(
-		"kafka.resilience.retry.redirected",
+		MetricRetryRedirected,
 		metric.WithDescription("Messages sent to the retry topic"),
 		metric.WithUnit("{message}"),
 	)
 
 	ins.retryProcessed, _ = meter.Int64Counter(
-		"kafka.resilience.retry.processed",
+		MetricRetryProcessed,
 		metric.WithDescription("Retried messages that were processed successfully"),
 		metric.WithUnit("{message}"),
 	)
 
 	ins.dlqEnqueued, _ = meter.Int64Counter(
-		"kafka.resilience.dlq.enqueued",
+		MetricDLQEnqueued,
 		metric.WithDescription("Messages sent to the dead letter queue"),
 		metric.WithUnit("{message}"),
 	)
 
 	ins.backoffWait, _ = meter.Float64Histogram(
-		"kafka.resilience.backoff.wait",
+		MetricBackoffWait,
 		metric.WithDescription("Time spent waiting during retry backoff"),
 		metric.WithUnit("s"),
 	)
@@ -57,19 +68,19 @@ func newCoordinatorInstruments(meter metric.Meter) *coordinatorInstruments {
 	ins := &coordinatorInstruments{}
 
 	ins.lockAcquired, _ = meter.Int64Counter(
-		"kafka.resilience.lock.acquired",
+		MetricLockAcquired,
 		metric.WithDescription("Distributed lock acquisitions"),
 		metric.WithUnit("{operation}"),
 	)
 
 	ins.lockReleased, _ = meter.Int64Counter(
-		"kafka.resilience.lock.released",
+		MetricLockReleased,
 		metric.WithDescription("Distributed lock releases"),
 		metric.WithUnit("{operation}"),
 	)
 
 	ins.stateRestoreDur, _ = meter.Float64Histogram(
-		"kafka.resilience.state_restore.duration",
+		MetricStateRestoreDur,
 		metric.WithDescription("Time taken to restore coordinator state on startup"),
 		metric.WithUnit("s"),
 	)

@@ -40,7 +40,7 @@ func (l *localStateCoordinator) Release(_ context.Context, msg *InternalMessage)
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
-	topic, ok := GetHeaderValue[string](msg.headerData, HeaderTopic)
+	topic, ok := GetHeaderValue[string](msg.headerData, headerTopic)
 	if !ok {
 		topic = msg.topic
 	}

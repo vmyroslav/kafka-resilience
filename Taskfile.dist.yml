@@ -1,5 +1,13 @@
 version: '3'
 
+vars:
+  SUBMODULES: >-
+    adapter/sarama
+    examples/sarama/basic
+    examples/sarama/granular
+    examples/sarama/strict
+    examples/sarama/demo
+
 includes:
   internal:
     taskfile: ./Taskfile.internal.yml
@@ -62,6 +70,8 @@ tasks:
     desc: Clean up and format code
     cmds:
       - go mod tidy
+      - for: { var: SUBMODULES, split: ' ' }
+        cmd: cd {{.ITEM}} && go mod tidy
       - defer: {task: fmt}
 
   update-deps:
@@ -69,6 +79,8 @@ tasks:
     cmds:
       - go get -u ./...
       - go mod tidy
+      - for: { var: SUBMODULES, split: ' ' }
+        cmd: cd {{.ITEM}} && go get -u ./... && go mod tidy
 
 # #################################################
 # Build Tasks

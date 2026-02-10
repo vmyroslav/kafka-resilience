@@ -30,17 +30,13 @@ const (
 	HeaderDLQOriginalFailureTime = "x-dlq-original-failure-time"
 )
 
+// Internal header constants used by the coordinator and retry logic.
 const (
-	// HeaderCoordinatorID unique identifier for the coordinator instance
-	HeaderCoordinatorID = "x-coordinator-id"
-	// HeaderTopic stores the original topic name
-	HeaderTopic = "topic"
-	// HeaderID stores the message ID
-	HeaderID = "id"
-	// HeaderRetry stores the retry flag
-	HeaderRetry = "retry"
-	// HeaderKey stores the message key
-	HeaderKey = "key"
+	headerCoordinatorID = "x-coordinator-id"
+	headerTopic         = "topic"
+	headerID            = "id"
+	headerRetry         = "retry"
+	headerKey           = "key"
 )
 
 // Message represents a Kafka message
@@ -101,6 +97,7 @@ func NewInternalMessage(topic string, key, value []byte, headers *HeaderList) *I
 	}
 }
 
+// NewFromMessage creates an InternalMessage by copying all fields and headers from the given Message.
 func NewFromMessage(msg Message) *InternalMessage {
 	im := &InternalMessage{
 		topic:      msg.Topic(),

@@ -94,10 +94,10 @@ func TestIntegration_KafkaCoordinator(t *testing.T) {
 		assert.Equal(t, capturedUUID, string(consumedMsg.Value), "Lock message value should match the generated ID")
 		// verify Headers
 		headers := toMap(consumedMsg.Headers)
-		assert.Equal(t, topic, string(headers[resilience.HeaderTopic]), "Header 'topic' should match")
+		assert.Equal(t, topic, string(headers["topic"]), "Header 'topic' should match")
 		assert.Equal(t, string(msgKey), string(headers["key"]), "Header 'key' should match original resource key")
 		assert.Equal(t, capturedUUID, string(headers["id"]), "Header 'id' should match the generated UUID")
-		assert.Contains(t, headers, resilience.HeaderCoordinatorID, "Header 'x-coordinator-id' should be present")
+		assert.Contains(t, headers, "x-coordinator-id", "Header 'x-coordinator-id' should be present")
 	case <-time.After(5 * time.Second):
 		t.Fatal("Timeout waiting for Lock message on redirect topic")
 	}
@@ -119,7 +119,7 @@ func TestIntegration_KafkaCoordinator(t *testing.T) {
 		assert.Nil(t, consumedMsg.Value, "Tombstone value should be nil")
 		// verify Headers
 		headers := toMap(consumedMsg.Headers)
-		assert.Contains(t, headers, resilience.HeaderCoordinatorID, "Header 'x-coordinator-id' should be present")
+		assert.Contains(t, headers, "x-coordinator-id", "Header 'x-coordinator-id' should be present")
 	case <-time.After(5 * time.Second):
 		t.Fatal("Timeout waiting for Tombstone on redirect topic")
 	}
@@ -170,9 +170,9 @@ func TestIntegration_KafkaCoordinator_ForeignLock(t *testing.T) {
 		Key:   sarama.StringEncoder(key),
 		Value: sarama.StringEncoder(key), // Lock value
 		Headers: []sarama.RecordHeader{
-			{Key: []byte(resilience.HeaderTopic), Value: []byte(topic)},
+			{Key: []byte("topic"), Value: []byte(topic)},
 			{Key: []byte("key"), Value: []byte(key)},
-			{Key: []byte(resilience.HeaderCoordinatorID), Value: []byte(foreignID)},
+			{Key: []byte("x-coordinator-id"), Value: []byte(foreignID)},
 		},
 	}
 
@@ -190,9 +190,9 @@ func TestIntegration_KafkaCoordinator_ForeignLock(t *testing.T) {
 		Key:   sarama.StringEncoder(key),
 		Value: nil, // Tombstone
 		Headers: []sarama.RecordHeader{
-			{Key: []byte(resilience.HeaderTopic), Value: []byte(topic)},
+			{Key: []byte("topic"), Value: []byte(topic)},
 			{Key: []byte("key"), Value: []byte(key)},
-			{Key: []byte(resilience.HeaderCoordinatorID), Value: []byte(foreignID)},
+			{Key: []byte("x-coordinator-id"), Value: []byte(foreignID)},
 		},
 	}
 
@@ -326,9 +326,9 @@ func TestIntegration_KafkaCoordinator_Synchronize(t *testing.T) {
 		Key:   sarama.StringEncoder(key),
 		Value: sarama.StringEncoder(key),
 		Headers: []sarama.RecordHeader{
-			{Key: []byte(resilience.HeaderTopic), Value: []byte(topic)},
+			{Key: []byte("topic"), Value: []byte(topic)},
 			{Key: []byte("key"), Value: []byte(key)},
-			{Key: []byte(resilience.HeaderCoordinatorID), Value: []byte("external")},
+			{Key: []byte("x-coordinator-id"), Value: []byte("external")},
 		},
 	})
 	require.NoError(t, err)

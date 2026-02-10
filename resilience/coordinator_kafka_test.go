@@ -62,10 +62,10 @@ func TestKafkaStateCoordinator_Acquire(t *testing.T) {
 	headers := call.Msg.Headers().All()
 	assert.Contains(t, headers, "key")
 	assert.Equal(t, []byte("order-123"), headers["key"])
-	assert.Contains(t, headers, HeaderTopic)
-	assert.Equal(t, []byte("orders"), headers[HeaderTopic])
-	assert.Contains(t, headers, HeaderCoordinatorID)
-	assert.Equal(t, []byte(coordinator.instanceID), headers[HeaderCoordinatorID])
+	assert.Contains(t, headers, headerTopic)
+	assert.Equal(t, []byte("orders"), headers[headerTopic])
+	assert.Contains(t, headers, headerCoordinatorID)
+	assert.Equal(t, []byte(coordinator.instanceID), headers[headerCoordinatorID])
 }
 
 func TestKafkaStateCoordinator_Release(t *testing.T) {
@@ -100,7 +100,7 @@ func TestKafkaStateCoordinator_Release(t *testing.T) {
 		headerData: &HeaderList{},
 	}
 
-	// Acquire first (sets up required headers: HeaderID, HeaderTopic)
+	// Acquire first (sets up required headers: HeaderID, headerTopic)
 	err := coordinator.Acquire(ctx, "orders", msg)
 	require.NoError(t, err)
 	assert.True(t, coordinator.IsLocked(ctx, msg))
@@ -116,8 +116,8 @@ func TestKafkaStateCoordinator_Release(t *testing.T) {
 	releaseCall := mockProducer.ProduceCalls()[1]
 
 	headers := releaseCall.Msg.Headers().All()
-	assert.Contains(t, headers, HeaderCoordinatorID)
-	assert.Equal(t, []byte(coordinator.instanceID), headers[HeaderCoordinatorID])
+	assert.Contains(t, headers, headerCoordinatorID)
+	assert.Equal(t, []byte(coordinator.instanceID), headers[headerCoordinatorID])
 	// verify tombstone
 	assert.Nil(t, releaseCall.Msg.Value())
 }
@@ -254,8 +254,8 @@ func TestKafkaStateCoordinator_ProcessRedirect_Filter(t *testing.T) {
 		payload:    []byte("k1"),
 		headerData: &HeaderList{},
 	}
-	echoMsg.headerData.Set(HeaderCoordinatorID, []byte(coordinator.instanceID))
-	echoMsg.headerData.Set(HeaderTopic, []byte("orders"))
+	echoMsg.headerData.Set(headerCoordinatorID, []byte(coordinator.instanceID))
+	echoMsg.headerData.Set(headerTopic, []byte("orders"))
 	echoMsg.headerData.Set("key", []byte("k1"))
 
 	// we call Acquire first to set local ref count to 1 (simulating the source of the echo)
@@ -276,8 +276,8 @@ func TestKafkaStateCoordinator_ProcessRedirect_Filter(t *testing.T) {
 		payload:    []byte("k1"),
 		headerData: &HeaderList{},
 	}
-	foreignMsg.headerData.Set(HeaderCoordinatorID, []byte("other-uuid"))
-	foreignMsg.headerData.Set(HeaderTopic, []byte("orders"))
+	foreignMsg.headerData.Set(headerCoordinatorID, []byte("other-uuid"))
+	foreignMsg.headerData.Set(headerTopic, []byte("orders"))
 	foreignMsg.headerData.Set("key", []byte("k1"))
 
 	err = coordinator.processRedirectMessage(t.Context(), foreignMsg)
@@ -350,10 +350,10 @@ func TestKafkaStateCoordinator_Rebalance_Simulation(t *testing.T) {
 				payload:    []byte(key), // payload exists = Locked
 				headerData: &HeaderList{},
 			}
-			msg.headerData.Set(HeaderTopic, []byte(topic))
-			msg.headerData.Set(HeaderKey, []byte(key))
+			msg.headerData.Set(headerTopic, []byte(topic))
+			msg.headerData.Set(headerKey, []byte(key))
 			// Note: Different coordinator ID, simulating Instance A
-			msg.headerData.Set(HeaderCoordinatorID, []byte("instance-A"))
+			msg.headerData.Set(headerCoordinatorID, []byte("instance-A"))
 
 			msg.SetPartition(0)
 			msg.SetOffset(4) // < HWM (5)
@@ -614,8 +614,8 @@ func createMockRedirectMsg(topic, key, coordinatorID string, isLock bool) *Inter
 	}
 
 	hl := &HeaderList{}
-	hl.Set(HeaderCoordinatorID, []byte(coordinatorID))
-	hl.Set(HeaderTopic, []byte(topic))
+	hl.Set(headerCoordinatorID, []byte(coordinatorID))
+	hl.Set(headerTopic, []byte(topic))
 	hl.Set("key", []byte(key))
 
 	return &InternalMessage{
