@@ -16,101 +16,56 @@ tasks:
 # #################################################
   test-unit:
     desc: Run unit tests (fast, no Docker required)
-    summary: |
-      Runs all unit tests in the resilience package.
-      - Fast execution (~1-2 seconds)
-      - No external dependencies
-      - Uses race detector
-      - Verbose output
     cmds:
-      - go test -race -v ./resilience
+      - task: internal:test:resilience
+      - task: internal:test:adapter
 
   test-integration:
-    desc: Run integration tests (slower, requires Docker)
-    summary: |
-      Runs all integration tests that require Docker.
-      - Uses testcontainers-go to manage Kafka
-      - Tests: full retry flow, DLQ, restart recovery, FIFO ordering
-      - Duration: ~3-5 minutes
-      - Requires Docker daemon running
-      - Always runs fresh (cache disabled with -count=1)
+    desc: Run integration tests (requires Docker)
+    preconditions:
+      - sh: docker info > /dev/null 2>&1
+        msg: "Docker is not running. Please start Docker daemon before running integration tests."
     cmds:
-      - cd adapter/sarama && go test -race -v -count=1 -tags=integration .
+      - task: internal:test:integration
 
   test:
     desc: Run all tests (unit + integration)
-    summary: |
-      Runs both unit and integration tests.
-      - First runs fast unit tests
-      - Then runs slower integration tests
-      - Total duration: ~3-5 minutes
     cmds:
       - task: test-unit
       - task: test-integration
-      - echo "🎉 All tests passed!"
 
   test-coverage:
-    desc: Run tests with coverage report
-    summary: |
-      Generates coverage report for unit tests.
-      - Excludes mock files
-      - Outputs to coverage.out
-      - Use with: go tool cover -html=coverage.out
+    desc: Run all tests with coverage reports
     cmds:
-      - go list ./resilience/... | grep -v /mock_ > packages.out
-      - go test -gcflags=-l -covermode=atomic -coverprofile=coverage.tmp -race $(cat packages.out)
-      - cat coverage.tmp | grep -v mock_ > coverage.out
-      - rm coverage.tmp packages.out
-      - echo "✅ Coverage report saved to coverage.out"
-      - go tool cover -func=coverage.out | tail -1
-
-  test-watch:
-    desc: Watch and run unit tests on file changes
-    summary: |
-      Continuously watches for file changes and runs unit tests.
-      Requires: github.com/cespare/reflex
-      Install: go install github.com/cespare/reflex@latest
-    cmds:
-      - reflex -r '\.go$' -s -- sh -c 'clear && task test-unit'
+      - task: internal:test:resilience
+        vars: { COVERAGE: "true" }
+      - task: internal:test:adapter
+        vars: { COVERAGE: "true" }
+      - task: internal:test:integration
+        vars: { COVERAGE: "true" }
 
 # #################################################
 # Code Quality Tasks
 # #################################################
   lint:
     desc: Run linter checks
-    summary: |
-      Runs golangci-lint with project configuration.
-      - Uses .golangci.yml config
-      - Checks code style, bugs, performance
     cmds:
       - golangci-lint run -c .golangci.yml
 
   fmt:
     desc: Format project files
-    summary: |
-      Formats all Go files and fixes linter issues.
-      - Uses gofumpt for formatting
-      - Runs golangci-lint --fix for auto-fixes
     cmds:
       - find . -name '*.go' -type f -exec gofumpt -w {} +
       - golangci-lint run --fix
 
   clean:
     desc: Clean up and format code
-    summary: |
-      Tidies Go modules and formats code.
-      - Runs go mod tidy
-      - Formats all Go files
-      - Fixes linter issues
     cmds:
       - go mod tidy
       - defer: {task: fmt}
 
   update-deps:
     desc: Update Go dependencies
-    summary: |
-      Updates all Go dependencies to latest versions.
-      Warning: Review changes before committing.
     cmds:
       - go get -u ./...
       - go mod tidy
@@ -120,9 +75,6 @@ tasks:
 # #################################################
   build-example:
     desc: Build example applications
-    summary: |
-      Builds all example applications in examples/sarama/ directory.
-      Each example has its own go.mod with local replace directives.
     vars:
       BUILD_DIR: '{{.BUILD_DIR | default "dist"}}'
       EXAMPLES: basic granular strict demo

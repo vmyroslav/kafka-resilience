@@ -1,6 +1,49 @@
 version: '3'
 
-vars:
-  RELEASE_NOTES_FILE: release_notes.md
+silent: true
 
 tasks:
+  test:resilience:
+    desc: Run resilience package tests
+    dir: .
+    vars:
+      COVERAGE: '{{.COVERAGE | default "false"}}'
+    cmds:
+      - >-
+        go test -race -v -gcflags=-l
+        {{if eq .COVERAGE "true"}}-covermode=atomic -coverprofile=coverage-resilience.tmp{{end}}
+        ./resilience
+      - |
+        {{if eq .COVERAGE "true"}}
+        cat coverage-resilience.tmp | grep -v mock_ > coverage-resilience.out
+        rm coverage-resilience.tmp
+        {{end}}
+
+  test:adapter:
+    desc: Run adapter/sarama unit tests
+    dir: adapter/sarama
+    vars:
+      COVERAGE: '{{.COVERAGE | default "false"}}'
+    cmds:
+      - >-
+        go test -race -v -gcflags=-l
+        {{if eq .COVERAGE "true"}}-covermode=atomic -coverprofile=../../coverage-adapter.out{{end}}
+        .
+
+  test:integration:
+    desc: Run adapter/sarama integration tests
+    dir: adapter/sarama
+    vars:
+      COVERAGE: '{{.COVERAGE | default "false"}}'
+    cmds:
+      - >-
+        go test -race -v -count=1 -tags=integration -gcflags=-l
+        {{if eq .COVERAGE "true"}}-covermode=atomic
+        -coverprofile=../../coverage-integration.out
+        -coverpkg=github.com/vmyroslav/kafka-resilience/resilience,github.com/vmyroslav/kafka-resilience/adapter/sarama{{end}}
+        .
+
+  test:coverage:clean:
+    desc: Clean coverage files
+    cmds:
+      - rm -f coverage-*.out
