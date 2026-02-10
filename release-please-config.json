@@ -4,12 +4,10 @@
   "separate-pull-requests": true,
   "packages": {
     ".": {
-      "component": "kafka-resilience",
-      "changelog-path": "CHANGELOG.md"
+      "component": "kafka-resilience"
     },
     "adapter/sarama": {
-      "component": "sarama",
-      "changelog-path": "CHANGELOG.md"
+      "component": "sarama"
     }
   }
 }
