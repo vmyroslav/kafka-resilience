@@ -44,9 +44,13 @@ func TestIntegration_KafkaCoordinator(t *testing.T) {
 	require.NoError(t, err, "Coordinator should start and create topics successfully")
 
 	// verify that Start() actually created the redirect topic with correct config
-	metadata, err := adapters.Admin.DescribeTopics(ctx, []string{redirectTopicName})
-	require.NoError(t, err)
-	require.Len(t, metadata, int(cfg.RetryTopicPartitions))
+	// metadata propagation in Kafka can be slow on CI, so poll until visible
+	var metadata []resilience.TopicMetadata
+	require.Eventually(t, func() bool {
+		var descErr error
+		metadata, descErr = adapters.Admin.DescribeTopics(ctx, []string{redirectTopicName})
+		return descErr == nil && len(metadata) == int(cfg.RetryTopicPartitions)
+	}, 10*time.Second, 500*time.Millisecond, "redirect topic should become visible in metadata")
 	assert.Equal(t, redirectTopicName, metadata[0].Name())
 	assert.Equal(
 		t,
