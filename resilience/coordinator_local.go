@@ -25,27 +25,27 @@ func (l *localStateCoordinator) Start(_ context.Context, _ string) error {
 }
 
 // Acquire locks the key in local memory.
-func (l *localStateCoordinator) Acquire(_ context.Context, originalTopic string, msg *MessageEnvelope) error {
+func (l *localStateCoordinator) Acquire(_ context.Context, originalTopic string, msg Message) error {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
-	key := string(msg.key)
+	key := string(msg.Key())
 	l.lm.incrementRef(originalTopic, key)
 
 	return nil
 }
 
 // Release unlocks the key in local memory.
-func (l *localStateCoordinator) Release(_ context.Context, msg *MessageEnvelope) error {
+func (l *localStateCoordinator) Release(_ context.Context, msg Message) error {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
-	topic, ok := GetHeaderValue[string](msg.headerData, headerTopic)
+	topic, ok := GetHeaderValue[string](msg.Headers(), headerTopic)
 	if !ok {
-		topic = msg.topic
+		topic = msg.Topic()
 	}
 
-	key := string(msg.key)
+	key := string(msg.Key())
 
 	newCount, exists := l.lm.decrementRef(topic, key)
 	if !exists {
@@ -64,11 +64,11 @@ func (l *localStateCoordinator) Release(_ context.Context, msg *MessageEnvelope)
 }
 
 // IsLocked checks if the key is currently locked in local memory.
-func (l *localStateCoordinator) IsLocked(_ context.Context, msg *MessageEnvelope) bool {
+func (l *localStateCoordinator) IsLocked(_ context.Context, msg Message) bool {
 	l.mu.RLock()
 	defer l.mu.RUnlock()
 
-	count, exists := l.lm.getRefCount(msg.topic, string(msg.key))
+	count, exists := l.lm.getRefCount(msg.Topic(), string(msg.Key()))
 
 	return exists && count > 0
 }

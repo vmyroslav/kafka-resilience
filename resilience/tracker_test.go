@@ -36,10 +36,10 @@ func TestErrorTracker_Redirect_Rollback(t *testing.T) {
 
 	// Coordinator mocks: Acquire succeeds, Release MUST be called
 	mockCoordinator := &StateCoordinatorMock{
-		AcquireFunc: func(_ context.Context, _ string, _ *MessageEnvelope) error {
+		AcquireFunc: func(_ context.Context, _ string, _ Message) error {
 			return nil
 		},
-		ReleaseFunc: func(_ context.Context, _ *MessageEnvelope) error {
+		ReleaseFunc: func(_ context.Context, _ Message) error {
 			return nil
 		},
 	}
@@ -99,10 +99,10 @@ func TestErrorTracker_Redirect_RollbackFailure_LogsCriticalError(t *testing.T) {
 
 	// Coordinator: Acquire succeeds, but Release ALSO fails (worst case)
 	mockCoordinator := &StateCoordinatorMock{
-		AcquireFunc: func(_ context.Context, _ string, _ *MessageEnvelope) error {
+		AcquireFunc: func(_ context.Context, _ string, _ Message) error {
 			return nil
 		},
-		ReleaseFunc: func(_ context.Context, _ *MessageEnvelope) error {
+		ReleaseFunc: func(_ context.Context, _ Message) error {
 			return errors.New("release failed - kafka unavailable")
 		},
 	}
@@ -167,16 +167,16 @@ func TestErrorTracker_Redirect_RollbackSuccess_KeyNotLocked(t *testing.T) {
 	}
 
 	mockCoordinator := &StateCoordinatorMock{
-		AcquireFunc: func(_ context.Context, _ string, msg *MessageEnvelope) error {
-			lockState[string(msg.key)] = true
+		AcquireFunc: func(_ context.Context, _ string, msg Message) error {
+			lockState[string(msg.Key())] = true
 			return nil
 		},
-		ReleaseFunc: func(_ context.Context, msg *MessageEnvelope) error {
-			lockState[string(msg.key)] = false
+		ReleaseFunc: func(_ context.Context, msg Message) error {
+			lockState[string(msg.Key())] = false
 			return nil
 		},
-		IsLockedFunc: func(_ context.Context, msg *MessageEnvelope) bool {
-			return lockState[string(msg.key)]
+		IsLockedFunc: func(_ context.Context, msg Message) bool {
+			return lockState[string(msg.Key())]
 		},
 	}
 
@@ -229,7 +229,7 @@ func TestErrorTracker_NotRetriableError_GoesDirectlyToDLQ(t *testing.T) {
 	}
 
 	mockCoordinator := &StateCoordinatorMock{
-		AcquireFunc: func(_ context.Context, _ string, _ *MessageEnvelope) error {
+		AcquireFunc: func(_ context.Context, _ string, _ Message) error {
 			t.Error("Acquire should NOT be called for NotRetriableError")
 			return nil
 		},
@@ -383,7 +383,7 @@ func TestErrorTracker_Redirect_HappyPath(t *testing.T) {
 	}
 
 	mockCoordinator := &StateCoordinatorMock{
-		AcquireFunc: func(_ context.Context, _ string, _ *MessageEnvelope) error {
+		AcquireFunc: func(_ context.Context, _ string, _ Message) error {
 			return nil
 		},
 	}
@@ -432,7 +432,7 @@ func TestErrorTracker_Redirect_AlreadyInRetry_SkipsLockAcquisition(t *testing.T)
 	}
 
 	mockCoordinator := &StateCoordinatorMock{
-		AcquireFunc: func(_ context.Context, _ string, _ *MessageEnvelope) error {
+		AcquireFunc: func(_ context.Context, _ string, _ Message) error {
 			t.Error("Acquire should NOT be called for messages already in retry")
 			return nil
 		},
@@ -495,7 +495,7 @@ func TestErrorTracker_Redirect_IncrementsAttemptCounter(t *testing.T) {
 	}
 
 	mockCoordinator := &StateCoordinatorMock{
-		AcquireFunc: func(_ context.Context, _ string, _ *MessageEnvelope) error {
+		AcquireFunc: func(_ context.Context, _ string, _ Message) error {
 			return nil
 		},
 	}
@@ -566,7 +566,7 @@ func TestErrorTracker_Redirect_PreservesUserHeaders(t *testing.T) {
 	}
 
 	mockCoordinator := &StateCoordinatorMock{
-		AcquireFunc: func(_ context.Context, _ string, _ *MessageEnvelope) error {
+		AcquireFunc: func(_ context.Context, _ string, _ Message) error {
 			return nil
 		},
 	}
@@ -642,7 +642,7 @@ func TestErrorTracker_Redirect_PreservesOriginalTopic(t *testing.T) {
 	}
 
 	mockCoordinator := &StateCoordinatorMock{
-		AcquireFunc: func(_ context.Context, _ string, _ *MessageEnvelope) error {
+		AcquireFunc: func(_ context.Context, _ string, _ Message) error {
 			return nil
 		},
 	}
@@ -699,7 +699,7 @@ func TestErrorTracker_Redirect_AcquireFailure_ReturnsError(t *testing.T) {
 	}
 
 	mockCoordinator := &StateCoordinatorMock{
-		AcquireFunc: func(_ context.Context, _ string, _ *MessageEnvelope) error {
+		AcquireFunc: func(_ context.Context, _ string, _ Message) error {
 			return errors.New("coordinator unavailable")
 		},
 	}
@@ -749,9 +749,9 @@ func TestErrorTracker_Redirect_SetsRetryMetadataHeaders(t *testing.T) {
 	}
 
 	mockCoordinator := &StateCoordinatorMock{
-		AcquireFunc: func(_ context.Context, _ string, msg *MessageEnvelope) error {
+		AcquireFunc: func(_ context.Context, _ string, msg Message) error {
 			// Simulate Acquire setting the ID header
-			_ = SetHeader[string](msg.headerData, headerID, "generated-uuid-123")
+			_ = SetHeader[string](msg.Headers(), headerID, "generated-uuid-123")
 			return nil
 		},
 	}
@@ -821,10 +821,10 @@ func TestErrorTracker_Redirect_SetsRetryMetadataHeaders(t *testing.T) {
 
 func TestErrorTracker_Free_HappyPath(t *testing.T) {
 	// Free should call coordinator.Release
-	var releasedMsg *MessageEnvelope
+	var releasedMsg Message
 
 	mockCoordinator := &StateCoordinatorMock{
-		ReleaseFunc: func(_ context.Context, msg *MessageEnvelope) error {
+		ReleaseFunc: func(_ context.Context, msg Message) error {
 			releasedMsg = msg
 			return nil
 		},
@@ -857,13 +857,13 @@ func TestErrorTracker_Free_HappyPath(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Len(t, mockCoordinator.ReleaseCalls(), 1)
-	assert.Equal(t, []byte("order-1"), releasedMsg.key)
+	assert.Equal(t, []byte("order-1"), releasedMsg.Key())
 }
 
 func TestErrorTracker_Free_CoordinatorFailure_ReturnsError(t *testing.T) {
 	// If coordinator.Release fails, Free should return the error
 	mockCoordinator := &StateCoordinatorMock{
-		ReleaseFunc: func(_ context.Context, _ *MessageEnvelope) error {
+		ReleaseFunc: func(_ context.Context, _ Message) error {
 			return errors.New("coordinator release failed")
 		},
 	}
@@ -899,7 +899,7 @@ func TestErrorTracker_Free_WithMissingHeaders_StillCallsRelease(t *testing.T) {
 	var releaseCalled bool
 
 	mockCoordinator := &StateCoordinatorMock{
-		ReleaseFunc: func(_ context.Context, _ *MessageEnvelope) error {
+		ReleaseFunc: func(_ context.Context, _ Message) error {
 			releaseCalled = true
 			return nil
 		},
@@ -1130,7 +1130,7 @@ func TestErrorTracker_MaxRetriesExceeded_SendsToDLQ(t *testing.T) {
 	}
 
 	mockCoordinator := &StateCoordinatorMock{
-		AcquireFunc: func(_ context.Context, _ string, _ *MessageEnvelope) error {
+		AcquireFunc: func(_ context.Context, _ string, _ Message) error {
 			return nil
 		},
 	}
@@ -1185,7 +1185,7 @@ func TestErrorTracker_MaxRetriesExceeded_FreeOnDLQ_True_ReleasesLock(t *testing.
 	}
 
 	mockCoordinator := &StateCoordinatorMock{
-		ReleaseFunc: func(_ context.Context, _ *MessageEnvelope) error {
+		ReleaseFunc: func(_ context.Context, _ Message) error {
 			releaseCalled = true
 			return nil
 		},
@@ -1237,7 +1237,7 @@ func TestErrorTracker_MaxRetriesExceeded_FreeOnDLQ_False_KeepsLock(t *testing.T)
 	}
 
 	mockCoordinator := &StateCoordinatorMock{
-		ReleaseFunc: func(_ context.Context, _ *MessageEnvelope) error {
+		ReleaseFunc: func(_ context.Context, _ Message) error {
 			t.Error("Release should NOT be called when FreeOnDLQ=false")
 			return nil
 		},
@@ -1660,10 +1660,10 @@ func TestErrorTracker_NewResilientHandler_KeyInRetryChain_AutoRedirects(t *testi
 	}
 
 	mockCoordinator := &StateCoordinatorMock{
-		IsLockedFunc: func(_ context.Context, _ *MessageEnvelope) bool {
+		IsLockedFunc: func(_ context.Context, _ Message) bool {
 			return true // Key is locked
 		},
-		AcquireFunc: func(_ context.Context, _ string, _ *MessageEnvelope) error {
+		AcquireFunc: func(_ context.Context, _ string, _ Message) error {
 			return nil
 		},
 	}
@@ -1714,10 +1714,10 @@ func TestErrorTracker_NewResilientHandler_Success_NoLockManagement(t *testing.T)
 	var userHandlerCalled bool
 
 	mockCoordinator := &StateCoordinatorMock{
-		IsLockedFunc: func(_ context.Context, _ *MessageEnvelope) bool {
+		IsLockedFunc: func(_ context.Context, _ Message) bool {
 			return false // Key is NOT locked
 		},
-		ReleaseFunc: func(_ context.Context, _ *MessageEnvelope) error {
+		ReleaseFunc: func(_ context.Context, _ Message) error {
 			t.Error("Release should NOT be called for main topic messages")
 			return nil
 		},
@@ -1769,10 +1769,10 @@ func TestErrorTracker_NewResilientHandler_Failure_StartsRetryChain(t *testing.T)
 	}
 
 	mockCoordinator := &StateCoordinatorMock{
-		IsLockedFunc: func(_ context.Context, _ *MessageEnvelope) bool {
+		IsLockedFunc: func(_ context.Context, _ Message) bool {
 			return false // Key is NOT locked
 		},
-		AcquireFunc: func(_ context.Context, _ string, _ *MessageEnvelope) error {
+		AcquireFunc: func(_ context.Context, _ string, _ Message) error {
 			return nil
 		},
 	}

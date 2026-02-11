@@ -40,7 +40,8 @@ type ProducerMock struct {
 	// calls tracks calls to the methods.
 	calls struct {
 		// Close holds details about calls to the Close method.
-		Close []struct{}
+		Close []struct {
+		}
 		// Produce holds details about calls to the Produce method.
 		Produce []struct {
 			// Ctx is the ctx argument value.
@@ -60,7 +61,8 @@ func (mock *ProducerMock) Close() error {
 	if mock.CloseFunc == nil {
 		panic("ProducerMock.CloseFunc: method is nil but Producer.Close was just called")
 	}
-	callInfo := struct{}{}
+	callInfo := struct {
+	}{}
 	mock.lockClose.Lock()
 	mock.calls.Close = append(mock.calls.Close, callInfo)
 	mock.lockClose.Unlock()
@@ -71,8 +73,10 @@ func (mock *ProducerMock) Close() error {
 // Check the length with:
 //
 //	len(mockedProducer.CloseCalls())
-func (mock *ProducerMock) CloseCalls() []struct{} {
-	var calls []struct{}
+func (mock *ProducerMock) CloseCalls() []struct {
+} {
+	var calls []struct {
+	}
 	mock.lockClose.RLock()
 	calls = mock.calls.Close
 	mock.lockClose.RUnlock()
@@ -151,7 +155,8 @@ type ConsumerMock struct {
 	// calls tracks calls to the methods.
 	calls struct {
 		// Close holds details about calls to the Close method.
-		Close []struct{}
+		Close []struct {
+		}
 		// Consume holds details about calls to the Consume method.
 		Consume []struct {
 			// Ctx is the ctx argument value.
@@ -171,7 +176,8 @@ func (mock *ConsumerMock) Close() error {
 	if mock.CloseFunc == nil {
 		panic("ConsumerMock.CloseFunc: method is nil but Consumer.Close was just called")
 	}
-	callInfo := struct{}{}
+	callInfo := struct {
+	}{}
 	mock.lockClose.Lock()
 	mock.calls.Close = append(mock.calls.Close, callInfo)
 	mock.lockClose.Unlock()
@@ -182,8 +188,10 @@ func (mock *ConsumerMock) Close() error {
 // Check the length with:
 //
 //	len(mockedConsumer.CloseCalls())
-func (mock *ConsumerMock) CloseCalls() []struct{} {
-	var calls []struct{}
+func (mock *ConsumerMock) CloseCalls() []struct {
+} {
+	var calls []struct {
+	}
 	mock.lockClose.RLock()
 	calls = mock.calls.Close
 	mock.lockClose.RUnlock()
@@ -340,7 +348,8 @@ type AdminMock struct {
 	// calls tracks calls to the methods.
 	calls struct {
 		// Close holds details about calls to the Close method.
-		Close []struct{}
+		Close []struct {
+		}
 		// CreateTopic holds details about calls to the CreateTopic method.
 		CreateTopic []struct {
 			// Ctx is the ctx argument value.
@@ -380,7 +389,8 @@ func (mock *AdminMock) Close() error {
 	if mock.CloseFunc == nil {
 		panic("AdminMock.CloseFunc: method is nil but Admin.Close was just called")
 	}
-	callInfo := struct{}{}
+	callInfo := struct {
+	}{}
 	mock.lockClose.Lock()
 	mock.calls.Close = append(mock.calls.Close, callInfo)
 	mock.lockClose.Unlock()
@@ -391,8 +401,10 @@ func (mock *AdminMock) Close() error {
 // Check the length with:
 //
 //	len(mockedAdmin.CloseCalls())
-func (mock *AdminMock) CloseCalls() []struct{} {
-	var calls []struct{}
+func (mock *AdminMock) CloseCalls() []struct {
+} {
+	var calls []struct {
+	}
 	mock.lockClose.RLock()
 	calls = mock.calls.Close
 	mock.lockClose.RUnlock()
@@ -751,7 +763,7 @@ var _ StateCoordinator = &StateCoordinatorMock{}
 //
 //		// make and configure a mocked StateCoordinator
 //		mockedStateCoordinator := &StateCoordinatorMock{
-//			AcquireFunc: func(ctx context.Context, originalTopic string, msg *MessageEnvelope) error {
+//			AcquireFunc: func(ctx context.Context, originalTopic string, msg Message) error {
 //				panic("mock out the Acquire method")
 //			},
 //			CloseFunc: func(ctx context.Context) error {
@@ -760,10 +772,10 @@ var _ StateCoordinator = &StateCoordinatorMock{}
 //			ErrorsFunc: func() <-chan error {
 //				panic("mock out the Errors method")
 //			},
-//			IsLockedFunc: func(ctx context.Context, msg *MessageEnvelope) bool {
+//			IsLockedFunc: func(ctx context.Context, msg Message) bool {
 //				panic("mock out the IsLocked method")
 //			},
-//			ReleaseFunc: func(ctx context.Context, msg *MessageEnvelope) error {
+//			ReleaseFunc: func(ctx context.Context, msg Message) error {
 //				panic("mock out the Release method")
 //			},
 //			StartFunc: func(ctx context.Context, topic string) error {
@@ -780,7 +792,7 @@ var _ StateCoordinator = &StateCoordinatorMock{}
 //	}
 type StateCoordinatorMock struct {
 	// AcquireFunc mocks the Acquire method.
-	AcquireFunc func(ctx context.Context, originalTopic string, msg *MessageEnvelope) error
+	AcquireFunc func(ctx context.Context, originalTopic string, msg Message) error
 
 	// CloseFunc mocks the Close method.
 	CloseFunc func(ctx context.Context) error
@@ -789,10 +801,10 @@ type StateCoordinatorMock struct {
 	ErrorsFunc func() <-chan error
 
 	// IsLockedFunc mocks the IsLocked method.
-	IsLockedFunc func(ctx context.Context, msg *MessageEnvelope) bool
+	IsLockedFunc func(ctx context.Context, msg Message) bool
 
 	// ReleaseFunc mocks the Release method.
-	ReleaseFunc func(ctx context.Context, msg *MessageEnvelope) error
+	ReleaseFunc func(ctx context.Context, msg Message) error
 
 	// StartFunc mocks the Start method.
 	StartFunc func(ctx context.Context, topic string) error
@@ -809,7 +821,7 @@ type StateCoordinatorMock struct {
 			// OriginalTopic is the originalTopic argument value.
 			OriginalTopic string
 			// Msg is the msg argument value.
-			Msg *MessageEnvelope
+			Msg Message
 		}
 		// Close holds details about calls to the Close method.
 		Close []struct {
@@ -817,20 +829,21 @@ type StateCoordinatorMock struct {
 			Ctx context.Context
 		}
 		// Errors holds details about calls to the Errors method.
-		Errors []struct{}
+		Errors []struct {
+		}
 		// IsLocked holds details about calls to the IsLocked method.
 		IsLocked []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
 			// Msg is the msg argument value.
-			Msg *MessageEnvelope
+			Msg Message
 		}
 		// Release holds details about calls to the Release method.
 		Release []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
 			// Msg is the msg argument value.
-			Msg *MessageEnvelope
+			Msg Message
 		}
 		// Start holds details about calls to the Start method.
 		Start []struct {
@@ -855,14 +868,14 @@ type StateCoordinatorMock struct {
 }
 
 // Acquire calls AcquireFunc.
-func (mock *StateCoordinatorMock) Acquire(ctx context.Context, originalTopic string, msg *MessageEnvelope) error {
+func (mock *StateCoordinatorMock) Acquire(ctx context.Context, originalTopic string, msg Message) error {
 	if mock.AcquireFunc == nil {
 		panic("StateCoordinatorMock.AcquireFunc: method is nil but StateCoordinator.Acquire was just called")
 	}
 	callInfo := struct {
 		Ctx           context.Context
 		OriginalTopic string
-		Msg           *MessageEnvelope
+		Msg           Message
 	}{
 		Ctx:           ctx,
 		OriginalTopic: originalTopic,
@@ -881,12 +894,12 @@ func (mock *StateCoordinatorMock) Acquire(ctx context.Context, originalTopic str
 func (mock *StateCoordinatorMock) AcquireCalls() []struct {
 	Ctx           context.Context
 	OriginalTopic string
-	Msg           *MessageEnvelope
+	Msg           Message
 } {
 	var calls []struct {
 		Ctx           context.Context
 		OriginalTopic string
-		Msg           *MessageEnvelope
+		Msg           Message
 	}
 	mock.lockAcquire.RLock()
 	calls = mock.calls.Acquire
@@ -931,7 +944,8 @@ func (mock *StateCoordinatorMock) Errors() <-chan error {
 	if mock.ErrorsFunc == nil {
 		panic("StateCoordinatorMock.ErrorsFunc: method is nil but StateCoordinator.Errors was just called")
 	}
-	callInfo := struct{}{}
+	callInfo := struct {
+	}{}
 	mock.lockErrors.Lock()
 	mock.calls.Errors = append(mock.calls.Errors, callInfo)
 	mock.lockErrors.Unlock()
@@ -942,8 +956,10 @@ func (mock *StateCoordinatorMock) Errors() <-chan error {
 // Check the length with:
 //
 //	len(mockedStateCoordinator.ErrorsCalls())
-func (mock *StateCoordinatorMock) ErrorsCalls() []struct{} {
-	var calls []struct{}
+func (mock *StateCoordinatorMock) ErrorsCalls() []struct {
+} {
+	var calls []struct {
+	}
 	mock.lockErrors.RLock()
 	calls = mock.calls.Errors
 	mock.lockErrors.RUnlock()
@@ -951,13 +967,13 @@ func (mock *StateCoordinatorMock) ErrorsCalls() []struct{} {
 }
 
 // IsLocked calls IsLockedFunc.
-func (mock *StateCoordinatorMock) IsLocked(ctx context.Context, msg *MessageEnvelope) bool {
+func (mock *StateCoordinatorMock) IsLocked(ctx context.Context, msg Message) bool {
 	if mock.IsLockedFunc == nil {
 		panic("StateCoordinatorMock.IsLockedFunc: method is nil but StateCoordinator.IsLocked was just called")
 	}
 	callInfo := struct {
 		Ctx context.Context
-		Msg *MessageEnvelope
+		Msg Message
 	}{
 		Ctx: ctx,
 		Msg: msg,
@@ -974,11 +990,11 @@ func (mock *StateCoordinatorMock) IsLocked(ctx context.Context, msg *MessageEnve
 //	len(mockedStateCoordinator.IsLockedCalls())
 func (mock *StateCoordinatorMock) IsLockedCalls() []struct {
 	Ctx context.Context
-	Msg *MessageEnvelope
+	Msg Message
 } {
 	var calls []struct {
 		Ctx context.Context
-		Msg *MessageEnvelope
+		Msg Message
 	}
 	mock.lockIsLocked.RLock()
 	calls = mock.calls.IsLocked
@@ -987,13 +1003,13 @@ func (mock *StateCoordinatorMock) IsLockedCalls() []struct {
 }
 
 // Release calls ReleaseFunc.
-func (mock *StateCoordinatorMock) Release(ctx context.Context, msg *MessageEnvelope) error {
+func (mock *StateCoordinatorMock) Release(ctx context.Context, msg Message) error {
 	if mock.ReleaseFunc == nil {
 		panic("StateCoordinatorMock.ReleaseFunc: method is nil but StateCoordinator.Release was just called")
 	}
 	callInfo := struct {
 		Ctx context.Context
-		Msg *MessageEnvelope
+		Msg Message
 	}{
 		Ctx: ctx,
 		Msg: msg,
@@ -1010,11 +1026,11 @@ func (mock *StateCoordinatorMock) Release(ctx context.Context, msg *MessageEnvel
 //	len(mockedStateCoordinator.ReleaseCalls())
 func (mock *StateCoordinatorMock) ReleaseCalls() []struct {
 	Ctx context.Context
-	Msg *MessageEnvelope
+	Msg Message
 } {
 	var calls []struct {
 		Ctx context.Context
-		Msg *MessageEnvelope
+		Msg Message
 	}
 	mock.lockRelease.RLock()
 	calls = mock.calls.Release

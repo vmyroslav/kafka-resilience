@@ -81,8 +81,10 @@ func NewErrorTracker(
 		return nil, errors.New("backoff strategy cannot be nil")
 	}
 
+	cfgCopy := *cfg
+
 	t := ErrorTracker{
-		cfg:             cfg,
+		cfg:             &cfgCopy,
 		logger:          logger,
 		producer:        producer,
 		consumerFactory: consumerFactory,
