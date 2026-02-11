@@ -37,17 +37,15 @@ type ErrorTracker struct {
 }
 
 // NewErrorTracker creates a new ErrorTracker with the provided dependencies.
-// All parameters except backoff are required.
-// Returns an error if any required parameter is missing or if the configuration is invalid.
+// cfg, producer, consumerFactory, and admin are required.
+// Logger, coordinator, backoff, and meter can be configured via TrackerOption;
+// sensible defaults are used when not provided.
 func NewErrorTracker(
 	cfg *Config,
-	logger Logger,
 	producer Producer,
 	consumerFactory ConsumerFactory,
 	admin Admin,
-	coordinator StateCoordinator,
-	backoff BackoffStrategy,
-	meter metric.Meter,
+	opts ...TrackerOption,
 ) (*ErrorTracker, error) {
 	if cfg == nil {
 		return nil, errors.New("config cannot be nil")
@@ -55,10 +53,6 @@ func NewErrorTracker(
 
 	if err := cfg.Validate(); err != nil {
 		return nil, err
-	}
-
-	if logger == nil {
-		return nil, errors.New("logger cannot be nil")
 	}
 
 	if producer == nil {
@@ -73,25 +67,38 @@ func NewErrorTracker(
 		return nil, errors.New("admin cannot be nil")
 	}
 
-	if coordinator == nil {
-		return nil, errors.New("coordinator cannot be nil")
+	var options trackerOptions
+	for _, opt := range opts {
+		opt(&options)
 	}
 
-	if backoff == nil {
-		return nil, errors.New("backoff strategy cannot be nil")
+	if options.logger == nil {
+		options.logger = NewNoOpLogger()
+	}
+
+	if options.backoff == nil {
+		options.backoff = NewExponentialBackoff()
+	}
+
+	meter := resolveMeter(options.meter)
+
+	if options.coordinator == nil {
+		options.coordinator = NewKafkaStateCoordinator(
+			cfg, options.logger, producer, consumerFactory, admin, options.meter,
+		)
 	}
 
 	cfgCopy := *cfg
 
 	t := ErrorTracker{
 		cfg:             &cfgCopy,
-		logger:          logger,
+		logger:          options.logger,
 		producer:        producer,
 		consumerFactory: consumerFactory,
 		admin:           admin,
-		coordinator:     coordinator,
-		backoff:         backoff,
-		instruments:     newTrackerInstruments(resolveMeter(meter)),
+		coordinator:     options.coordinator,
+		backoff:         options.backoff,
+		instruments:     newTrackerInstruments(meter),
 		startedTopics:   make(map[string]struct{}),
 		cancels:         make(map[string]context.CancelFunc),
 	}

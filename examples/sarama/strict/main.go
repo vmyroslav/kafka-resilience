@@ -45,7 +45,7 @@ func main() {
 	resilienceCfg.MaxRetries = 3
 	resilienceCfg.RetryTopicPartitions = 1
 
-	tracker, err := saramaadapter.NewResilienceTracker(resilienceCfg, client, saramaadapter.WithLogger(logger))
+	tracker, err := saramaadapter.NewResilienceTracker(resilienceCfg, client, resilience.WithLogger(logger))
 	if err != nil {
 		logger.Error("Failed to create resilience tracker", "error", err)
 		os.Exit(1)

@@ -382,11 +382,12 @@ func TestIntegration_RestartRestoration(t *testing.T) {
 	)
 
 	tracker1, err := resilience.NewErrorTracker(
-		cfg, sharedLogger,
+		cfg,
 		saramaadapter.NewProducerAdapter(producer1),
 		saramaadapter.NewConsumerFactory(client1),
-		admin1, coord1, resilience.NewExponentialBackoff(),
-		nil,
+		admin1,
+		resilience.WithLogger(sharedLogger),
+		resilience.WithCoordinator(coord1),
 	)
 	require.NoError(t, err)
 
@@ -455,9 +456,9 @@ func TestIntegration_RestartRestoration(t *testing.T) {
 	)
 
 	tracker2, err := resilience.NewErrorTracker(
-		cfg, sharedLogger, adapters2.Producer, adapters2.ConsumerFactory, adapters2.Admin,
-		coord2, resilience.NewExponentialBackoff(),
-		nil,
+		cfg, adapters2.Producer, adapters2.ConsumerFactory, adapters2.Admin,
+		resilience.WithLogger(sharedLogger),
+		resilience.WithCoordinator(coord2),
 	)
 	require.NoError(t, err)
 
@@ -508,9 +509,9 @@ func TestIntegration_TombstoneRestoration(t *testing.T) {
 		nil,
 	)
 	tracker1, err := resilience.NewErrorTracker(
-		cfg, sharedLogger, adapters.Producer, adapters.ConsumerFactory, adapters.Admin,
-		coord1, resilience.NewExponentialBackoff(),
-		nil,
+		cfg, adapters.Producer, adapters.ConsumerFactory, adapters.Admin,
+		resilience.WithLogger(sharedLogger),
+		resilience.WithCoordinator(coord1),
 	)
 	require.NoError(t, err)
 
@@ -546,9 +547,9 @@ func TestIntegration_TombstoneRestoration(t *testing.T) {
 		nil,
 	)
 	tracker2, err := resilience.NewErrorTracker(
-		cfg, sharedLogger, adapters.Producer, adapters.ConsumerFactory, adapters.Admin,
-		coord2, resilience.NewExponentialBackoff(),
-		nil,
+		cfg, adapters.Producer, adapters.ConsumerFactory, adapters.Admin,
+		resilience.WithLogger(sharedLogger),
+		resilience.WithCoordinator(coord2),
 	)
 	require.NoError(t, err)
 

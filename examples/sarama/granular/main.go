@@ -55,7 +55,7 @@ func main() {
 	tracker, err := saramaadapter.NewResilienceTracker(
 		resilienceCfg,
 		client,
-		saramaadapter.WithLogger(slog.Default()),
+		resilience.WithLogger(slog.Default()),
 	)
 	if err != nil {
 		slog.Error("Failed to create tracker", "error", err)

@@ -55,13 +55,12 @@ func TestErrorTracker_Redirect_Rollback(t *testing.T) {
 
 	tracker, err := NewErrorTracker(
 		cfg,
-		logger,
 		mockProducer,
 		&ConsumerFactoryMock{},
 		&AdminMock{},
-		mockCoordinator,
-		&mockBackoff{},
-		nil,
+		WithLogger(logger),
+		WithCoordinator(mockCoordinator),
+		WithBackoff(&mockBackoff{}),
 	)
 	require.NoError(t, err)
 
@@ -124,13 +123,12 @@ func TestErrorTracker_Redirect_RollbackFailure_LogsCriticalError(t *testing.T) {
 
 	tracker, err := NewErrorTracker(
 		cfg,
-		logger,
 		mockProducer,
 		&ConsumerFactoryMock{},
 		&AdminMock{},
-		mockCoordinator,
-		&mockBackoff{},
-		nil,
+		WithLogger(logger),
+		WithCoordinator(mockCoordinator),
+		WithBackoff(&mockBackoff{}),
 	)
 	require.NoError(t, err)
 
@@ -188,13 +186,12 @@ func TestErrorTracker_Redirect_RollbackSuccess_KeyNotLocked(t *testing.T) {
 	cfg := newTestConfig()
 	tracker, err := NewErrorTracker(
 		cfg,
-		logger,
 		mockProducer,
 		&ConsumerFactoryMock{},
 		&AdminMock{},
-		mockCoordinator,
-		&mockBackoff{},
-		nil,
+		WithLogger(logger),
+		WithCoordinator(mockCoordinator),
+		WithBackoff(&mockBackoff{}),
 	)
 	require.NoError(t, err)
 
@@ -246,13 +243,12 @@ func TestErrorTracker_NotRetriableError_GoesDirectlyToDLQ(t *testing.T) {
 
 	tracker, err := NewErrorTracker(
 		cfg,
-		logger,
 		mockProducer,
 		&ConsumerFactoryMock{},
 		&AdminMock{},
-		mockCoordinator,
-		&mockBackoff{},
-		nil,
+		WithLogger(logger),
+		WithCoordinator(mockCoordinator),
+		WithBackoff(&mockBackoff{}),
 	)
 	require.NoError(t, err)
 
@@ -313,13 +309,12 @@ func TestErrorTracker_Close_WithTimeout(t *testing.T) {
 	cfg := newTestConfig()
 	tracker, err := NewErrorTracker(
 		cfg,
-		logger,
 		mockProducer,
 		&ConsumerFactoryMock{},
 		&AdminMock{},
-		mockCoordinator,
-		&mockBackoff{},
-		nil,
+		WithLogger(logger),
+		WithCoordinator(mockCoordinator),
+		WithBackoff(&mockBackoff{}),
 	)
 	require.NoError(t, err)
 
@@ -352,13 +347,12 @@ func TestErrorTracker_Close_TimeoutReturnsError(t *testing.T) {
 	cfg := newTestConfig()
 	tracker, err := NewErrorTracker(
 		cfg,
-		logger,
 		mockProducer,
 		&ConsumerFactoryMock{},
 		&AdminMock{},
-		mockCoordinator,
-		&mockBackoff{},
-		nil,
+		WithLogger(logger),
+		WithCoordinator(mockCoordinator),
+		WithBackoff(&mockBackoff{}),
 	)
 	require.NoError(t, err)
 
@@ -393,15 +387,11 @@ func TestErrorTracker_Redirect_HappyPath(t *testing.T) {
 
 	tracker, err := NewErrorTracker(
 		cfg,
-		&LoggerMock{
-			DebugFunc: func(_ string, _ ...interface{}) {},
-		},
 		mockProducer,
 		&ConsumerFactoryMock{},
 		&AdminMock{},
-		mockCoordinator,
-		&mockBackoff{},
-		nil,
+		WithCoordinator(mockCoordinator),
+		WithBackoff(&mockBackoff{}),
 	)
 	require.NoError(t, err)
 
@@ -443,15 +433,11 @@ func TestErrorTracker_Redirect_AlreadyInRetry_SkipsLockAcquisition(t *testing.T)
 
 	tracker, err := NewErrorTracker(
 		cfg,
-		&LoggerMock{
-			DebugFunc: func(_ string, _ ...interface{}) {},
-		},
 		mockProducer,
 		&ConsumerFactoryMock{},
 		&AdminMock{},
-		mockCoordinator,
-		&mockBackoff{},
-		nil,
+		WithCoordinator(mockCoordinator),
+		WithBackoff(&mockBackoff{}),
 	)
 	require.NoError(t, err)
 
@@ -505,15 +491,11 @@ func TestErrorTracker_Redirect_IncrementsAttemptCounter(t *testing.T) {
 
 	tracker, err := NewErrorTracker(
 		cfg,
-		&LoggerMock{
-			DebugFunc: func(_ string, _ ...interface{}) {},
-		},
 		mockProducer,
 		&ConsumerFactoryMock{},
 		&AdminMock{},
-		mockCoordinator,
-		&mockBackoff{},
-		nil,
+		WithCoordinator(mockCoordinator),
+		WithBackoff(&mockBackoff{}),
 	)
 	require.NoError(t, err)
 
@@ -576,15 +558,11 @@ func TestErrorTracker_Redirect_PreservesUserHeaders(t *testing.T) {
 
 	tracker, err := NewErrorTracker(
 		cfg,
-		&LoggerMock{
-			DebugFunc: func(_ string, _ ...interface{}) {},
-		},
 		mockProducer,
 		&ConsumerFactoryMock{},
 		&AdminMock{},
-		mockCoordinator,
-		&mockBackoff{},
-		nil,
+		WithCoordinator(mockCoordinator),
+		WithBackoff(&mockBackoff{}),
 	)
 	require.NoError(t, err)
 
@@ -652,15 +630,11 @@ func TestErrorTracker_Redirect_PreservesOriginalTopic(t *testing.T) {
 
 	tracker, err := NewErrorTracker(
 		cfg,
-		&LoggerMock{
-			DebugFunc: func(_ string, _ ...interface{}) {},
-		},
 		mockProducer,
 		&ConsumerFactoryMock{},
 		&AdminMock{},
-		mockCoordinator,
-		&mockBackoff{},
-		nil,
+		WithCoordinator(mockCoordinator),
+		WithBackoff(&mockBackoff{}),
 	)
 	require.NoError(t, err)
 
@@ -709,15 +683,11 @@ func TestErrorTracker_Redirect_AcquireFailure_ReturnsError(t *testing.T) {
 
 	tracker, err := NewErrorTracker(
 		cfg,
-		&LoggerMock{
-			DebugFunc: func(_ string, _ ...interface{}) {},
-		},
 		mockProducer,
 		&ConsumerFactoryMock{},
 		&AdminMock{},
-		mockCoordinator,
-		&mockBackoff{},
-		nil,
+		WithCoordinator(mockCoordinator),
+		WithBackoff(&mockBackoff{}),
 	)
 	require.NoError(t, err)
 
@@ -761,15 +731,11 @@ func TestErrorTracker_Redirect_SetsRetryMetadataHeaders(t *testing.T) {
 
 	tracker, err := NewErrorTracker(
 		cfg,
-		&LoggerMock{
-			DebugFunc: func(_ string, _ ...interface{}) {},
-		},
 		mockProducer,
 		&ConsumerFactoryMock{},
 		&AdminMock{},
-		mockCoordinator,
-		&mockBackoff{},
-		nil,
+		WithCoordinator(mockCoordinator),
+		WithBackoff(&mockBackoff{}),
 	)
 	require.NoError(t, err)
 
@@ -833,13 +799,11 @@ func TestErrorTracker_Free_HappyPath(t *testing.T) {
 	cfg := newTestConfig()
 	tracker, err := NewErrorTracker(
 		cfg,
-		&LoggerMock{},
 		&ProducerMock{},
 		&ConsumerFactoryMock{},
 		&AdminMock{},
-		mockCoordinator,
-		&mockBackoff{},
-		nil,
+		WithCoordinator(mockCoordinator),
+		WithBackoff(&mockBackoff{}),
 	)
 	require.NoError(t, err)
 
@@ -871,13 +835,11 @@ func TestErrorTracker_Free_CoordinatorFailure_ReturnsError(t *testing.T) {
 	cfg := newTestConfig()
 	tracker, err := NewErrorTracker(
 		cfg,
-		&LoggerMock{},
 		&ProducerMock{},
 		&ConsumerFactoryMock{},
 		&AdminMock{},
-		mockCoordinator,
-		&mockBackoff{},
-		nil,
+		WithCoordinator(mockCoordinator),
+		WithBackoff(&mockBackoff{}),
 	)
 	require.NoError(t, err)
 
@@ -908,13 +870,11 @@ func TestErrorTracker_Free_WithMissingHeaders_StillCallsRelease(t *testing.T) {
 	cfg := newTestConfig()
 	tracker, err := NewErrorTracker(
 		cfg,
-		&LoggerMock{},
 		&ProducerMock{},
 		&ConsumerFactoryMock{},
 		&AdminMock{},
-		mockCoordinator,
-		&mockBackoff{},
-		nil,
+		WithCoordinator(mockCoordinator),
+		WithBackoff(&mockBackoff{}),
 	)
 	require.NoError(t, err)
 
@@ -953,15 +913,14 @@ func TestErrorTracker_SendToDLQ_HappyPath(t *testing.T) {
 
 	tracker, err := NewErrorTracker(
 		cfg,
-		&LoggerMock{
-			ErrorFunc: func(_ string, _ ...interface{}) {},
-		},
 		mockProducer,
 		&ConsumerFactoryMock{},
 		&AdminMock{},
-		&StateCoordinatorMock{},
-		&mockBackoff{},
-		nil,
+		WithLogger(&LoggerMock{
+			ErrorFunc: func(_ string, _ ...interface{}) {},
+		}),
+		WithCoordinator(&StateCoordinatorMock{}),
+		WithBackoff(&mockBackoff{}),
 	)
 	require.NoError(t, err)
 
@@ -1009,15 +968,14 @@ func TestErrorTracker_SendToDLQ_PreservesOriginalTopicFromHeader(t *testing.T) {
 	cfg := newTestConfig()
 	tracker, err := NewErrorTracker(
 		cfg,
-		&LoggerMock{
-			ErrorFunc: func(_ string, _ ...interface{}) {},
-		},
 		mockProducer,
 		&ConsumerFactoryMock{},
 		&AdminMock{},
-		&StateCoordinatorMock{},
-		&mockBackoff{},
-		nil,
+		WithLogger(&LoggerMock{
+			ErrorFunc: func(_ string, _ ...interface{}) {},
+		}),
+		WithCoordinator(&StateCoordinatorMock{}),
+		WithBackoff(&mockBackoff{}),
 	)
 	require.NoError(t, err)
 
@@ -1051,15 +1009,14 @@ func TestErrorTracker_SendToDLQ_IncludesRetryAttemptCount(t *testing.T) {
 	cfg := newTestConfig()
 	tracker, err := NewErrorTracker(
 		cfg,
-		&LoggerMock{
-			ErrorFunc: func(_ string, _ ...interface{}) {},
-		},
 		mockProducer,
 		&ConsumerFactoryMock{},
 		&AdminMock{},
-		&StateCoordinatorMock{},
-		&mockBackoff{},
-		nil,
+		WithLogger(&LoggerMock{
+			ErrorFunc: func(_ string, _ ...interface{}) {},
+		}),
+		WithCoordinator(&StateCoordinatorMock{}),
+		WithBackoff(&mockBackoff{}),
 	)
 	require.NoError(t, err)
 
@@ -1093,15 +1050,14 @@ func TestErrorTracker_SendToDLQ_ProducerFailure_ReturnsError(t *testing.T) {
 	cfg := newTestConfig()
 	tracker, err := NewErrorTracker(
 		cfg,
-		&LoggerMock{
-			ErrorFunc: func(_ string, _ ...interface{}) {},
-		},
 		mockProducer,
 		&ConsumerFactoryMock{},
 		&AdminMock{},
-		&StateCoordinatorMock{},
-		&mockBackoff{},
-		nil,
+		WithLogger(&LoggerMock{
+			ErrorFunc: func(_ string, _ ...interface{}) {},
+		}),
+		WithCoordinator(&StateCoordinatorMock{}),
+		WithBackoff(&mockBackoff{}),
 	)
 	require.NoError(t, err)
 
@@ -1141,17 +1097,16 @@ func TestErrorTracker_MaxRetriesExceeded_SendsToDLQ(t *testing.T) {
 
 	tracker, err := NewErrorTracker(
 		cfg,
-		&LoggerMock{
-			DebugFunc: func(_ string, _ ...interface{}) {},
-			WarnFunc:  func(_ string, _ ...interface{}) {},
-			ErrorFunc: func(_ string, _ ...interface{}) {},
-		},
 		mockProducer,
 		&ConsumerFactoryMock{},
 		&AdminMock{},
-		mockCoordinator,
-		&mockBackoff{},
-		nil,
+		WithLogger(&LoggerMock{
+			DebugFunc: func(_ string, _ ...interface{}) {},
+			WarnFunc:  func(_ string, _ ...interface{}) {},
+			ErrorFunc: func(_ string, _ ...interface{}) {},
+		}),
+		WithCoordinator(mockCoordinator),
+		WithBackoff(&mockBackoff{}),
 	)
 	require.NoError(t, err)
 
@@ -1197,17 +1152,16 @@ func TestErrorTracker_MaxRetriesExceeded_FreeOnDLQ_True_ReleasesLock(t *testing.
 
 	tracker, err := NewErrorTracker(
 		cfg,
-		&LoggerMock{
-			DebugFunc: func(_ string, _ ...interface{}) {},
-			WarnFunc:  func(_ string, _ ...interface{}) {},
-			ErrorFunc: func(_ string, _ ...interface{}) {},
-		},
 		mockProducer,
 		&ConsumerFactoryMock{},
 		&AdminMock{},
-		mockCoordinator,
-		&mockBackoff{},
-		nil,
+		WithLogger(&LoggerMock{
+			DebugFunc: func(_ string, _ ...interface{}) {},
+			WarnFunc:  func(_ string, _ ...interface{}) {},
+			ErrorFunc: func(_ string, _ ...interface{}) {},
+		}),
+		WithCoordinator(mockCoordinator),
+		WithBackoff(&mockBackoff{}),
 	)
 	require.NoError(t, err)
 
@@ -1249,17 +1203,16 @@ func TestErrorTracker_MaxRetriesExceeded_FreeOnDLQ_False_KeepsLock(t *testing.T)
 
 	tracker, err := NewErrorTracker(
 		cfg,
-		&LoggerMock{
-			DebugFunc: func(_ string, _ ...interface{}) {},
-			WarnFunc:  func(_ string, _ ...interface{}) {},
-			ErrorFunc: func(_ string, _ ...interface{}) {},
-		},
 		mockProducer,
 		&ConsumerFactoryMock{},
 		&AdminMock{},
-		mockCoordinator,
-		&mockBackoff{},
-		nil,
+		WithLogger(&LoggerMock{
+			DebugFunc: func(_ string, _ ...interface{}) {},
+			WarnFunc:  func(_ string, _ ...interface{}) {},
+			ErrorFunc: func(_ string, _ ...interface{}) {},
+		}),
+		WithCoordinator(mockCoordinator),
+		WithBackoff(&mockBackoff{}),
 	)
 	require.NoError(t, err)
 
@@ -1289,13 +1242,11 @@ func TestErrorTracker_WaitForRetryTime_NoHeader_ReturnsImmediately(t *testing.T)
 	cfg := newTestConfig()
 	tracker, err := NewErrorTracker(
 		cfg,
-		&LoggerMock{},
 		&ProducerMock{},
 		&ConsumerFactoryMock{},
 		&AdminMock{},
-		&StateCoordinatorMock{},
-		&mockBackoff{},
-		nil,
+		WithCoordinator(&StateCoordinatorMock{}),
+		WithBackoff(&mockBackoff{}),
 	)
 	require.NoError(t, err)
 
@@ -1318,15 +1269,11 @@ func TestErrorTracker_WaitForRetryTime_PastTime_ReturnsImmediately(t *testing.T)
 	cfg := newTestConfig()
 	tracker, err := NewErrorTracker(
 		cfg,
-		&LoggerMock{
-			DebugFunc: func(_ string, _ ...interface{}) {},
-		},
 		&ProducerMock{},
 		&ConsumerFactoryMock{},
 		&AdminMock{},
-		&StateCoordinatorMock{},
-		&mockBackoff{},
-		nil,
+		WithCoordinator(&StateCoordinatorMock{}),
+		WithBackoff(&mockBackoff{}),
 	)
 	require.NoError(t, err)
 
@@ -1355,15 +1302,11 @@ func TestErrorTracker_WaitForRetryTime_FutureTime_Waits(t *testing.T) {
 	cfg := newTestConfig()
 	tracker, err := NewErrorTracker(
 		cfg,
-		&LoggerMock{
-			DebugFunc: func(_ string, _ ...interface{}) {},
-		},
 		&ProducerMock{},
 		&ConsumerFactoryMock{},
 		&AdminMock{},
-		&StateCoordinatorMock{},
-		&mockBackoff{},
-		nil,
+		WithCoordinator(&StateCoordinatorMock{}),
+		WithBackoff(&mockBackoff{}),
 	)
 	require.NoError(t, err)
 
@@ -1393,15 +1336,11 @@ func TestErrorTracker_WaitForRetryTime_ContextCancellation_ReturnsError(t *testi
 	cfg := newTestConfig()
 	tracker, err := NewErrorTracker(
 		cfg,
-		&LoggerMock{
-			DebugFunc: func(_ string, _ ...interface{}) {},
-		},
 		&ProducerMock{},
 		&ConsumerFactoryMock{},
 		&AdminMock{},
-		&StateCoordinatorMock{},
-		&mockBackoff{},
-		nil,
+		WithCoordinator(&StateCoordinatorMock{}),
+		WithBackoff(&mockBackoff{}),
 	)
 	require.NoError(t, err)
 
@@ -1436,19 +1375,18 @@ func TestErrorTracker_WaitForRetryTime_CorruptedTimestamp_ReturnsImmediately(t *
 	cfg := newTestConfig()
 	tracker, err := NewErrorTracker(
 		cfg,
-		&LoggerMock{
+		&ProducerMock{},
+		&ConsumerFactoryMock{},
+		&AdminMock{},
+		WithLogger(&LoggerMock{
 			WarnFunc: func(msg string, _ ...interface{}) {
 				if msg == "invalid retry timestamp header" {
 					warningLogged = true
 				}
 			},
-		},
-		&ProducerMock{},
-		&ConsumerFactoryMock{},
-		&AdminMock{},
-		&StateCoordinatorMock{},
-		&mockBackoff{},
-		nil,
+		}),
+		WithCoordinator(&StateCoordinatorMock{}),
+		WithBackoff(&mockBackoff{}),
 	)
 	require.NoError(t, err)
 
@@ -1486,13 +1424,11 @@ func TestErrorTracker_ensureTopicsExist_AutoCreationDisabled_MissingTopics_Retur
 
 	tracker, err := NewErrorTracker(
 		cfg,
-		&LoggerMock{},
 		&ProducerMock{},
 		&ConsumerFactoryMock{},
 		mockAdmin,
-		&StateCoordinatorMock{},
-		&mockBackoff{},
-		nil,
+		WithCoordinator(&StateCoordinatorMock{}),
+		WithBackoff(&mockBackoff{}),
 	)
 	require.NoError(t, err)
 
@@ -1521,13 +1457,11 @@ func TestErrorTracker_ensureTopicsExist_AutoCreationDisabled_TopicsExist_NoError
 
 	tracker, err := NewErrorTracker(
 		cfg,
-		&LoggerMock{},
 		&ProducerMock{},
 		&ConsumerFactoryMock{},
 		mockAdmin,
-		&StateCoordinatorMock{},
-		&mockBackoff{},
-		nil,
+		WithCoordinator(&StateCoordinatorMock{}),
+		WithBackoff(&mockBackoff{}),
 	)
 	require.NoError(t, err)
 
@@ -1568,15 +1502,11 @@ func TestErrorTracker_ensureTopicsExist_AutoCreation_CreatesTopics(t *testing.T)
 
 	tracker, err := NewErrorTracker(
 		cfg,
-		&LoggerMock{
-			DebugFunc: func(_ string, _ ...interface{}) {},
-		},
 		&ProducerMock{},
 		&ConsumerFactoryMock{},
 		mockAdmin,
-		&StateCoordinatorMock{},
-		&mockBackoff{},
-		nil,
+		WithCoordinator(&StateCoordinatorMock{}),
+		WithBackoff(&mockBackoff{}),
 	)
 	require.NoError(t, err)
 
@@ -1614,15 +1544,11 @@ func TestErrorTracker_ensureTopicsExist_UsesConfiguredPartitions(t *testing.T) {
 
 	tracker, err := NewErrorTracker(
 		cfg,
-		&LoggerMock{
-			DebugFunc: func(_ string, _ ...interface{}) {},
-		},
 		&ProducerMock{},
 		&ConsumerFactoryMock{},
 		mockAdmin,
-		&StateCoordinatorMock{},
-		&mockBackoff{},
-		nil,
+		WithCoordinator(&StateCoordinatorMock{}),
+		WithBackoff(&mockBackoff{}),
 	)
 	require.NoError(t, err)
 
@@ -1673,15 +1599,11 @@ func TestErrorTracker_NewResilientHandler_KeyInRetryChain_AutoRedirects(t *testi
 
 	tracker, err := NewErrorTracker(
 		cfg,
-		&LoggerMock{
-			DebugFunc: func(_ string, _ ...interface{}) {},
-		},
 		mockProducer,
 		&ConsumerFactoryMock{},
 		&AdminMock{},
-		mockCoordinator,
-		&mockBackoff{},
-		nil,
+		WithCoordinator(mockCoordinator),
+		WithBackoff(&mockBackoff{}),
 	)
 	require.NoError(t, err)
 
@@ -1726,13 +1648,11 @@ func TestErrorTracker_NewResilientHandler_Success_NoLockManagement(t *testing.T)
 	cfg := newTestConfig()
 	tracker, err := NewErrorTracker(
 		cfg,
-		&LoggerMock{},
 		&ProducerMock{},
 		&ConsumerFactoryMock{},
 		&AdminMock{},
-		mockCoordinator,
-		&mockBackoff{},
-		nil,
+		WithCoordinator(mockCoordinator),
+		WithBackoff(&mockBackoff{}),
 	)
 	require.NoError(t, err)
 
@@ -1782,15 +1702,11 @@ func TestErrorTracker_NewResilientHandler_Failure_StartsRetryChain(t *testing.T)
 
 	tracker, err := NewErrorTracker(
 		cfg,
-		&LoggerMock{
-			DebugFunc: func(_ string, _ ...interface{}) {},
-		},
 		mockProducer,
 		&ConsumerFactoryMock{},
 		&AdminMock{},
-		mockCoordinator,
-		&mockBackoff{},
-		nil,
+		WithCoordinator(mockCoordinator),
+		WithBackoff(&mockBackoff{}),
 	)
 	require.NoError(t, err)
 
@@ -1821,35 +1737,13 @@ func TestErrorTracker_NewResilientHandler_Failure_StartsRetryChain(t *testing.T)
 func TestNewErrorTracker_NilConfig_ReturnsError(t *testing.T) {
 	_, err := NewErrorTracker(
 		nil, // nil config
-		&LoggerMock{},
 		&ProducerMock{},
 		&ConsumerFactoryMock{},
 		&AdminMock{},
-		&StateCoordinatorMock{},
-		&mockBackoff{},
-		nil,
 	)
 
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "config cannot be nil")
-}
-
-func TestNewErrorTracker_NilLogger_ReturnsError(t *testing.T) {
-	cfg := newTestConfig()
-
-	_, err := NewErrorTracker(
-		cfg,
-		nil, // nil logger
-		&ProducerMock{},
-		&ConsumerFactoryMock{},
-		&AdminMock{},
-		&StateCoordinatorMock{},
-		&mockBackoff{},
-		nil,
-	)
-
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "logger cannot be nil")
 }
 
 func TestNewErrorTracker_NilProducer_ReturnsError(t *testing.T) {
@@ -1857,13 +1751,9 @@ func TestNewErrorTracker_NilProducer_ReturnsError(t *testing.T) {
 
 	_, err := NewErrorTracker(
 		cfg,
-		&LoggerMock{},
 		nil, // nil producer
 		&ConsumerFactoryMock{},
 		&AdminMock{},
-		&StateCoordinatorMock{},
-		&mockBackoff{},
-		nil,
 	)
 
 	require.Error(t, err)
@@ -1875,13 +1765,9 @@ func TestNewErrorTracker_NilConsumerFactory_ReturnsError(t *testing.T) {
 
 	_, err := NewErrorTracker(
 		cfg,
-		&LoggerMock{},
 		&ProducerMock{},
 		nil, // nil consumerFactory
 		&AdminMock{},
-		&StateCoordinatorMock{},
-		&mockBackoff{},
-		nil,
 	)
 
 	require.Error(t, err)
@@ -1893,53 +1779,13 @@ func TestNewErrorTracker_NilAdmin_ReturnsError(t *testing.T) {
 
 	_, err := NewErrorTracker(
 		cfg,
-		&LoggerMock{},
 		&ProducerMock{},
 		&ConsumerFactoryMock{},
 		nil, // nil admin
-		&StateCoordinatorMock{},
-		&mockBackoff{},
-		nil,
 	)
 
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "admin cannot be nil")
-}
-
-func TestNewErrorTracker_NilCoordinator_ReturnsError(t *testing.T) {
-	cfg := newTestConfig()
-
-	_, err := NewErrorTracker(
-		cfg,
-		&LoggerMock{},
-		&ProducerMock{},
-		&ConsumerFactoryMock{},
-		&AdminMock{},
-		nil, // nil coordinator
-		&mockBackoff{},
-		nil,
-	)
-
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "coordinator cannot be nil")
-}
-
-func TestNewErrorTracker_NilBackoff_ReturnsError(t *testing.T) {
-	cfg := newTestConfig()
-
-	_, err := NewErrorTracker(
-		cfg,
-		&LoggerMock{},
-		&ProducerMock{},
-		&ConsumerFactoryMock{},
-		&AdminMock{},
-		&StateCoordinatorMock{},
-		nil, // nil backoff
-		nil,
-	)
-
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "backoff strategy cannot be nil")
 }
 
 func TestNewErrorTracker_InvalidConfig_ReturnsError(t *testing.T) {
@@ -1948,13 +1794,9 @@ func TestNewErrorTracker_InvalidConfig_ReturnsError(t *testing.T) {
 
 	_, err := NewErrorTracker(
 		cfg,
-		&LoggerMock{},
 		&ProducerMock{},
 		&ConsumerFactoryMock{},
 		&AdminMock{},
-		&StateCoordinatorMock{},
-		&mockBackoff{},
-		nil,
 	)
 
 	require.Error(t, err)
@@ -1971,13 +1813,11 @@ func TestErrorTracker_TopicNames(t *testing.T) {
 
 	tracker, err := NewErrorTracker(
 		cfg,
-		&LoggerMock{},
 		&ProducerMock{},
 		&ConsumerFactoryMock{},
 		&AdminMock{},
-		&StateCoordinatorMock{},
-		&mockBackoff{},
-		nil,
+		WithCoordinator(&StateCoordinatorMock{}),
+		WithBackoff(&mockBackoff{}),
 	)
 	require.NoError(t, err)
 

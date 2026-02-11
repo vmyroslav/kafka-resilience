@@ -151,9 +151,9 @@ func TestIntegration_SaramaAdapterFullFlow(t *testing.T) {
 	)
 
 	tracker, err := resilience.NewErrorTracker(
-		cfg, sharedLogger, adapters.Producer, adapters.ConsumerFactory, adapters.Admin,
-		coordinator, resilience.NewExponentialBackoff(),
-		nil,
+		cfg, adapters.Producer, adapters.ConsumerFactory, adapters.Admin,
+		resilience.WithLogger(sharedLogger),
+		resilience.WithCoordinator(coordinator),
 	)
 	require.NoError(t, err, "failed to create error tracker")
 
@@ -390,9 +390,9 @@ func TestIntegration_ChainRetry(t *testing.T) {
 	)
 
 	tracker, err := resilience.NewErrorTracker(
-		cfg, sharedLogger, adapters.Producer, adapters.ConsumerFactory, adapters.Admin,
-		coordinator, resilience.NewExponentialBackoff(),
-		nil,
+		cfg, adapters.Producer, adapters.ConsumerFactory, adapters.Admin,
+		resilience.WithLogger(sharedLogger),
+		resilience.WithCoordinator(coordinator),
 	)
 	require.NoError(t, err, "failed to create error tracker")
 
@@ -534,9 +534,9 @@ func TestIntegration_DLQ(t *testing.T) {
 	)
 
 	tracker, err := resilience.NewErrorTracker(
-		cfg, sharedLogger, adapters.Producer, adapters.ConsumerFactory, adapters.Admin,
-		coordinator, resilience.NewExponentialBackoff(),
-		nil,
+		cfg, adapters.Producer, adapters.ConsumerFactory, adapters.Admin,
+		resilience.WithLogger(sharedLogger),
+		resilience.WithCoordinator(coordinator),
 	)
 	require.NoError(t, err, "failed to create error tracker")
 
@@ -735,9 +735,9 @@ func TestIntegration_DLQ_WithFreeOnDLQ(t *testing.T) {
 	)
 
 	tracker, err := resilience.NewErrorTracker(
-		cfg, sharedLogger, adapters.Producer, adapters.ConsumerFactory, adapters.Admin,
-		coordinator, resilience.NewExponentialBackoff(),
-		nil,
+		cfg, adapters.Producer, adapters.ConsumerFactory, adapters.Admin,
+		resilience.WithLogger(sharedLogger),
+		resilience.WithCoordinator(coordinator),
 	)
 	require.NoError(t, err, "failed to create error tracker")
 
@@ -922,9 +922,9 @@ func TestIntegration_StrictOrdering(t *testing.T) {
 	)
 
 	tracker, err := resilience.NewErrorTracker(
-		cfg, sharedLogger, adapters.Producer, adapters.ConsumerFactory, adapters.Admin,
-		coordinator, resilience.NewExponentialBackoff(),
-		nil,
+		cfg, adapters.Producer, adapters.ConsumerFactory, adapters.Admin,
+		resilience.WithLogger(sharedLogger),
+		resilience.WithCoordinator(coordinator),
 	)
 	require.NoError(t, err)
 
@@ -1128,9 +1128,9 @@ func TestIntegration_NotRetriableError(t *testing.T) {
 	)
 
 	tracker, err := resilience.NewErrorTracker(
-		cfg, sharedLogger, adapters.Producer, adapters.ConsumerFactory, adapters.Admin,
-		coordinator, resilience.NewExponentialBackoff(),
-		nil,
+		cfg, adapters.Producer, adapters.ConsumerFactory, adapters.Admin,
+		resilience.WithLogger(sharedLogger),
+		resilience.WithCoordinator(coordinator),
 	)
 	require.NoError(t, err)
 
@@ -1315,9 +1315,9 @@ func TestIntegration_ConcurrentKeysIndependence(t *testing.T) {
 	)
 
 	tracker, err := resilience.NewErrorTracker(
-		cfg, sharedLogger, adapters.Producer, adapters.ConsumerFactory, adapters.Admin,
-		coordinator, resilience.NewExponentialBackoff(),
-		nil,
+		cfg, adapters.Producer, adapters.ConsumerFactory, adapters.Admin,
+		resilience.WithLogger(sharedLogger),
+		resilience.WithCoordinator(coordinator),
 	)
 	require.NoError(t, err)
 
