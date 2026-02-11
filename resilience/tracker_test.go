@@ -36,10 +36,10 @@ func TestErrorTracker_Redirect_Rollback(t *testing.T) {
 
 	// Coordinator mocks: Acquire succeeds, Release MUST be called
 	mockCoordinator := &StateCoordinatorMock{
-		AcquireFunc: func(_ context.Context, _ string, _ *InternalMessage) error {
+		AcquireFunc: func(_ context.Context, _ string, _ *MessageEnvelope) error {
 			return nil
 		},
-		ReleaseFunc: func(_ context.Context, _ *InternalMessage) error {
+		ReleaseFunc: func(_ context.Context, _ *MessageEnvelope) error {
 			return nil
 		},
 	}
@@ -65,7 +65,7 @@ func TestErrorTracker_Redirect_Rollback(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	msg := &InternalMessage{
+	msg := &MessageEnvelope{
 		topic:      "orders",
 		key:        []byte("order-1"),
 		headerData: &HeaderList{},
@@ -99,10 +99,10 @@ func TestErrorTracker_Redirect_RollbackFailure_LogsCriticalError(t *testing.T) {
 
 	// Coordinator: Acquire succeeds, but Release ALSO fails (worst case)
 	mockCoordinator := &StateCoordinatorMock{
-		AcquireFunc: func(_ context.Context, _ string, _ *InternalMessage) error {
+		AcquireFunc: func(_ context.Context, _ string, _ *MessageEnvelope) error {
 			return nil
 		},
-		ReleaseFunc: func(_ context.Context, _ *InternalMessage) error {
+		ReleaseFunc: func(_ context.Context, _ *MessageEnvelope) error {
 			return errors.New("release failed - kafka unavailable")
 		},
 	}
@@ -134,7 +134,7 @@ func TestErrorTracker_Redirect_RollbackFailure_LogsCriticalError(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	msg := &InternalMessage{
+	msg := &MessageEnvelope{
 		topic:      "orders",
 		key:        []byte("zombie-key"),
 		headerData: &HeaderList{},
@@ -167,15 +167,15 @@ func TestErrorTracker_Redirect_RollbackSuccess_KeyNotLocked(t *testing.T) {
 	}
 
 	mockCoordinator := &StateCoordinatorMock{
-		AcquireFunc: func(_ context.Context, _ string, msg *InternalMessage) error {
+		AcquireFunc: func(_ context.Context, _ string, msg *MessageEnvelope) error {
 			lockState[string(msg.key)] = true
 			return nil
 		},
-		ReleaseFunc: func(_ context.Context, msg *InternalMessage) error {
+		ReleaseFunc: func(_ context.Context, msg *MessageEnvelope) error {
 			lockState[string(msg.key)] = false
 			return nil
 		},
-		IsLockedFunc: func(_ context.Context, msg *InternalMessage) bool {
+		IsLockedFunc: func(_ context.Context, msg *MessageEnvelope) bool {
 			return lockState[string(msg.key)]
 		},
 	}
@@ -198,7 +198,7 @@ func TestErrorTracker_Redirect_RollbackSuccess_KeyNotLocked(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	msg := &InternalMessage{
+	msg := &MessageEnvelope{
 		topic:      "orders",
 		key:        []byte("order-123"),
 		headerData: &HeaderList{},
@@ -229,7 +229,7 @@ func TestErrorTracker_NotRetriableError_GoesDirectlyToDLQ(t *testing.T) {
 	}
 
 	mockCoordinator := &StateCoordinatorMock{
-		AcquireFunc: func(_ context.Context, _ string, _ *InternalMessage) error {
+		AcquireFunc: func(_ context.Context, _ string, _ *MessageEnvelope) error {
 			t.Error("Acquire should NOT be called for NotRetriableError")
 			return nil
 		},
@@ -256,7 +256,7 @@ func TestErrorTracker_NotRetriableError_GoesDirectlyToDLQ(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	msg := &InternalMessage{
+	msg := &MessageEnvelope{
 		topic:      "orders",
 		key:        []byte("invalid-order"),
 		headerData: &HeaderList{},
@@ -383,7 +383,7 @@ func TestErrorTracker_Redirect_HappyPath(t *testing.T) {
 	}
 
 	mockCoordinator := &StateCoordinatorMock{
-		AcquireFunc: func(_ context.Context, _ string, _ *InternalMessage) error {
+		AcquireFunc: func(_ context.Context, _ string, _ *MessageEnvelope) error {
 			return nil
 		},
 	}
@@ -405,7 +405,7 @@ func TestErrorTracker_Redirect_HappyPath(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	msg := &InternalMessage{
+	msg := &MessageEnvelope{
 		topic:      "orders",
 		key:        []byte("order-1"),
 		headerData: &HeaderList{},
@@ -432,7 +432,7 @@ func TestErrorTracker_Redirect_AlreadyInRetry_SkipsLockAcquisition(t *testing.T)
 	}
 
 	mockCoordinator := &StateCoordinatorMock{
-		AcquireFunc: func(_ context.Context, _ string, _ *InternalMessage) error {
+		AcquireFunc: func(_ context.Context, _ string, _ *MessageEnvelope) error {
 			t.Error("Acquire should NOT be called for messages already in retry")
 			return nil
 		},
@@ -462,7 +462,7 @@ func TestErrorTracker_Redirect_AlreadyInRetry_SkipsLockAcquisition(t *testing.T)
 	_ = SetHeader[string](headers, headerTopic, "orders")
 	_ = SetHeader[int](headers, HeaderRetryAttempt, 1)
 
-	msg := &InternalMessage{
+	msg := &MessageEnvelope{
 		topic:      "retry_orders", // Coming from retry topic
 		key:        []byte("order-1"),
 		headerData: headers,
@@ -495,7 +495,7 @@ func TestErrorTracker_Redirect_IncrementsAttemptCounter(t *testing.T) {
 	}
 
 	mockCoordinator := &StateCoordinatorMock{
-		AcquireFunc: func(_ context.Context, _ string, _ *InternalMessage) error {
+		AcquireFunc: func(_ context.Context, _ string, _ *MessageEnvelope) error {
 			return nil
 		},
 	}
@@ -518,7 +518,7 @@ func TestErrorTracker_Redirect_IncrementsAttemptCounter(t *testing.T) {
 	require.NoError(t, err)
 
 	// First redirect (no existing attempt header)
-	msg := &InternalMessage{
+	msg := &MessageEnvelope{
 		topic:      "orders",
 		key:        []byte("order-1"),
 		headerData: &HeaderList{},
@@ -539,7 +539,7 @@ func TestErrorTracker_Redirect_IncrementsAttemptCounter(t *testing.T) {
 	_ = SetHeader[string](headers, headerTopic, "orders")
 	_ = SetHeader[int](headers, HeaderRetryAttempt, 1)
 
-	msg2 := &InternalMessage{
+	msg2 := &MessageEnvelope{
 		topic:      "retry_orders",
 		key:        []byte("order-1"),
 		headerData: headers,
@@ -566,7 +566,7 @@ func TestErrorTracker_Redirect_PreservesUserHeaders(t *testing.T) {
 	}
 
 	mockCoordinator := &StateCoordinatorMock{
-		AcquireFunc: func(_ context.Context, _ string, _ *InternalMessage) error {
+		AcquireFunc: func(_ context.Context, _ string, _ *MessageEnvelope) error {
 			return nil
 		},
 	}
@@ -594,7 +594,7 @@ func TestErrorTracker_Redirect_PreservesUserHeaders(t *testing.T) {
 	headers.Set("x-trace-id", []byte("trace-456"))
 	headers.Set("x-custom-header", []byte("custom-value"))
 
-	msg := &InternalMessage{
+	msg := &MessageEnvelope{
 		topic:      "orders",
 		key:        []byte("order-1"),
 		payload:    []byte(`{"order": "data"}`),
@@ -642,7 +642,7 @@ func TestErrorTracker_Redirect_PreservesOriginalTopic(t *testing.T) {
 	}
 
 	mockCoordinator := &StateCoordinatorMock{
-		AcquireFunc: func(_ context.Context, _ string, _ *InternalMessage) error {
+		AcquireFunc: func(_ context.Context, _ string, _ *MessageEnvelope) error {
 			return nil
 		},
 	}
@@ -671,7 +671,7 @@ func TestErrorTracker_Redirect_PreservesOriginalTopic(t *testing.T) {
 	_ = SetHeader[string](headers, headerTopic, "original-orders") // Original topic
 	_ = SetHeader[int](headers, HeaderRetryAttempt, 1)
 
-	msg := &InternalMessage{
+	msg := &MessageEnvelope{
 		topic:      "retry_original-orders", // Current topic is retry
 		key:        []byte("order-1"),
 		headerData: headers,
@@ -699,7 +699,7 @@ func TestErrorTracker_Redirect_AcquireFailure_ReturnsError(t *testing.T) {
 	}
 
 	mockCoordinator := &StateCoordinatorMock{
-		AcquireFunc: func(_ context.Context, _ string, _ *InternalMessage) error {
+		AcquireFunc: func(_ context.Context, _ string, _ *MessageEnvelope) error {
 			return errors.New("coordinator unavailable")
 		},
 	}
@@ -721,7 +721,7 @@ func TestErrorTracker_Redirect_AcquireFailure_ReturnsError(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	msg := &InternalMessage{
+	msg := &MessageEnvelope{
 		topic:      "orders",
 		key:        []byte("order-1"),
 		headerData: &HeaderList{},
@@ -749,7 +749,7 @@ func TestErrorTracker_Redirect_SetsRetryMetadataHeaders(t *testing.T) {
 	}
 
 	mockCoordinator := &StateCoordinatorMock{
-		AcquireFunc: func(_ context.Context, _ string, msg *InternalMessage) error {
+		AcquireFunc: func(_ context.Context, _ string, msg *MessageEnvelope) error {
 			// Simulate Acquire setting the ID header
 			_ = SetHeader[string](msg.headerData, headerID, "generated-uuid-123")
 			return nil
@@ -773,7 +773,7 @@ func TestErrorTracker_Redirect_SetsRetryMetadataHeaders(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	msg := &InternalMessage{
+	msg := &MessageEnvelope{
 		topic:      "orders",
 		key:        []byte("order-1"),
 		payload:    []byte("payload"),
@@ -821,10 +821,10 @@ func TestErrorTracker_Redirect_SetsRetryMetadataHeaders(t *testing.T) {
 
 func TestErrorTracker_Free_HappyPath(t *testing.T) {
 	// Free should call coordinator.Release
-	var releasedMsg *InternalMessage
+	var releasedMsg *MessageEnvelope
 
 	mockCoordinator := &StateCoordinatorMock{
-		ReleaseFunc: func(_ context.Context, msg *InternalMessage) error {
+		ReleaseFunc: func(_ context.Context, msg *MessageEnvelope) error {
 			releasedMsg = msg
 			return nil
 		},
@@ -847,7 +847,7 @@ func TestErrorTracker_Free_HappyPath(t *testing.T) {
 	_ = SetHeader[string](headers, headerID, "lock-id-123")
 	_ = SetHeader[string](headers, headerTopic, "orders")
 
-	msg := &InternalMessage{
+	msg := &MessageEnvelope{
 		topic:      "retry_orders",
 		key:        []byte("order-1"),
 		headerData: headers,
@@ -863,7 +863,7 @@ func TestErrorTracker_Free_HappyPath(t *testing.T) {
 func TestErrorTracker_Free_CoordinatorFailure_ReturnsError(t *testing.T) {
 	// If coordinator.Release fails, Free should return the error
 	mockCoordinator := &StateCoordinatorMock{
-		ReleaseFunc: func(_ context.Context, _ *InternalMessage) error {
+		ReleaseFunc: func(_ context.Context, _ *MessageEnvelope) error {
 			return errors.New("coordinator release failed")
 		},
 	}
@@ -881,7 +881,7 @@ func TestErrorTracker_Free_CoordinatorFailure_ReturnsError(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	msg := &InternalMessage{
+	msg := &MessageEnvelope{
 		topic:      "retry_orders",
 		key:        []byte("order-1"),
 		headerData: &HeaderList{},
@@ -899,7 +899,7 @@ func TestErrorTracker_Free_WithMissingHeaders_StillCallsRelease(t *testing.T) {
 	var releaseCalled bool
 
 	mockCoordinator := &StateCoordinatorMock{
-		ReleaseFunc: func(_ context.Context, _ *InternalMessage) error {
+		ReleaseFunc: func(_ context.Context, _ *MessageEnvelope) error {
 			releaseCalled = true
 			return nil
 		},
@@ -919,7 +919,7 @@ func TestErrorTracker_Free_WithMissingHeaders_StillCallsRelease(t *testing.T) {
 	require.NoError(t, err)
 
 	// Message with no headers at all
-	msg := &InternalMessage{
+	msg := &MessageEnvelope{
 		topic:      "retry_orders",
 		key:        []byte("order-1"),
 		headerData: &HeaderList{},
@@ -965,7 +965,7 @@ func TestErrorTracker_SendToDLQ_HappyPath(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	msg := &InternalMessage{
+	msg := &MessageEnvelope{
 		topic:      "orders",
 		key:        []byte("order-1"),
 		payload:    []byte(`{"order": "data"}`),
@@ -1025,7 +1025,7 @@ func TestErrorTracker_SendToDLQ_PreservesOriginalTopicFromHeader(t *testing.T) {
 	headers := &HeaderList{}
 	_ = SetHeader[string](headers, headerTopic, "original-orders")
 
-	msg := &InternalMessage{
+	msg := &MessageEnvelope{
 		topic:      "retry_original-orders",
 		key:        []byte("order-1"),
 		headerData: headers,
@@ -1068,7 +1068,7 @@ func TestErrorTracker_SendToDLQ_IncludesRetryAttemptCount(t *testing.T) {
 	_ = SetHeader[int](headers, HeaderRetryAttempt, 3)
 	_ = SetHeader[string](headers, headerTopic, "orders")
 
-	msg := &InternalMessage{
+	msg := &MessageEnvelope{
 		topic:      "retry_orders",
 		key:        []byte("order-1"),
 		headerData: headers,
@@ -1105,7 +1105,7 @@ func TestErrorTracker_SendToDLQ_ProducerFailure_ReturnsError(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	msg := &InternalMessage{
+	msg := &MessageEnvelope{
 		topic:      "orders",
 		key:        []byte("order-1"),
 		headerData: &HeaderList{},
@@ -1130,7 +1130,7 @@ func TestErrorTracker_MaxRetriesExceeded_SendsToDLQ(t *testing.T) {
 	}
 
 	mockCoordinator := &StateCoordinatorMock{
-		AcquireFunc: func(_ context.Context, _ string, _ *InternalMessage) error {
+		AcquireFunc: func(_ context.Context, _ string, _ *MessageEnvelope) error {
 			return nil
 		},
 	}
@@ -1162,7 +1162,7 @@ func TestErrorTracker_MaxRetriesExceeded_SendsToDLQ(t *testing.T) {
 	_ = SetHeader[string](headers, headerID, "lock-id")
 	_ = SetHeader[string](headers, headerTopic, "orders")
 
-	msg := &InternalMessage{
+	msg := &MessageEnvelope{
 		topic:      "retry_orders",
 		key:        []byte("order-1"),
 		headerData: headers,
@@ -1185,7 +1185,7 @@ func TestErrorTracker_MaxRetriesExceeded_FreeOnDLQ_True_ReleasesLock(t *testing.
 	}
 
 	mockCoordinator := &StateCoordinatorMock{
-		ReleaseFunc: func(_ context.Context, _ *InternalMessage) error {
+		ReleaseFunc: func(_ context.Context, _ *MessageEnvelope) error {
 			releaseCalled = true
 			return nil
 		},
@@ -1217,7 +1217,7 @@ func TestErrorTracker_MaxRetriesExceeded_FreeOnDLQ_True_ReleasesLock(t *testing.
 	_ = SetHeader[string](headers, headerID, "lock-id")
 	_ = SetHeader[string](headers, headerTopic, "orders")
 
-	msg := &InternalMessage{
+	msg := &MessageEnvelope{
 		topic:      "retry_orders",
 		key:        []byte("order-1"),
 		headerData: headers,
@@ -1237,7 +1237,7 @@ func TestErrorTracker_MaxRetriesExceeded_FreeOnDLQ_False_KeepsLock(t *testing.T)
 	}
 
 	mockCoordinator := &StateCoordinatorMock{
-		ReleaseFunc: func(_ context.Context, _ *InternalMessage) error {
+		ReleaseFunc: func(_ context.Context, _ *MessageEnvelope) error {
 			t.Error("Release should NOT be called when FreeOnDLQ=false")
 			return nil
 		},
@@ -1269,7 +1269,7 @@ func TestErrorTracker_MaxRetriesExceeded_FreeOnDLQ_False_KeepsLock(t *testing.T)
 	_ = SetHeader[string](headers, headerID, "lock-id")
 	_ = SetHeader[string](headers, headerTopic, "orders")
 
-	msg := &InternalMessage{
+	msg := &MessageEnvelope{
 		topic:      "retry_orders",
 		key:        []byte("order-1"),
 		headerData: headers,
@@ -1299,7 +1299,7 @@ func TestErrorTracker_WaitForRetryTime_NoHeader_ReturnsImmediately(t *testing.T)
 	)
 	require.NoError(t, err)
 
-	msg := &InternalMessage{
+	msg := &MessageEnvelope{
 		topic:      "retry_orders",
 		key:        []byte("order-1"),
 		headerData: &HeaderList{}, // No headers
@@ -1335,7 +1335,7 @@ func TestErrorTracker_WaitForRetryTime_PastTime_ReturnsImmediately(t *testing.T)
 	headers := &HeaderList{}
 	_ = SetHeader[time.Time](headers, HeaderRetryNextTime, pastTime)
 
-	msg := &InternalMessage{
+	msg := &MessageEnvelope{
 		topic:      "retry_orders",
 		key:        []byte("order-1"),
 		headerData: headers,
@@ -1372,7 +1372,7 @@ func TestErrorTracker_WaitForRetryTime_FutureTime_Waits(t *testing.T) {
 	headers := &HeaderList{}
 	_ = SetHeader[time.Time](headers, HeaderRetryNextTime, futureTime)
 
-	msg := &InternalMessage{
+	msg := &MessageEnvelope{
 		topic:      "retry_orders",
 		key:        []byte("order-1"),
 		headerData: headers,
@@ -1410,7 +1410,7 @@ func TestErrorTracker_WaitForRetryTime_ContextCancellation_ReturnsError(t *testi
 	headers := &HeaderList{}
 	_ = SetHeader[time.Time](headers, HeaderRetryNextTime, futureTime)
 
-	msg := &InternalMessage{
+	msg := &MessageEnvelope{
 		topic:      "retry_orders",
 		key:        []byte("order-1"),
 		headerData: headers,
@@ -1456,7 +1456,7 @@ func TestErrorTracker_WaitForRetryTime_CorruptedTimestamp_ReturnsImmediately(t *
 	headers := &HeaderList{}
 	headers.Set(HeaderRetryNextTime, []byte("not-a-timestamp"))
 
-	msg := &InternalMessage{
+	msg := &MessageEnvelope{
 		topic:      "retry_orders",
 		key:        []byte("order-1"),
 		headerData: headers,
@@ -1660,10 +1660,10 @@ func TestErrorTracker_NewResilientHandler_KeyInRetryChain_AutoRedirects(t *testi
 	}
 
 	mockCoordinator := &StateCoordinatorMock{
-		IsLockedFunc: func(_ context.Context, _ *InternalMessage) bool {
+		IsLockedFunc: func(_ context.Context, _ *MessageEnvelope) bool {
 			return true // Key is locked
 		},
-		AcquireFunc: func(_ context.Context, _ string, _ *InternalMessage) error {
+		AcquireFunc: func(_ context.Context, _ string, _ *MessageEnvelope) error {
 			return nil
 		},
 	}
@@ -1693,7 +1693,7 @@ func TestErrorTracker_NewResilientHandler_KeyInRetryChain_AutoRedirects(t *testi
 
 	resilientHandler := tracker.NewResilientHandler(userHandler)
 
-	msg := &InternalMessage{
+	msg := &MessageEnvelope{
 		topic:      "orders",
 		key:        []byte("locked-key"),
 		headerData: &HeaderList{},
@@ -1714,10 +1714,10 @@ func TestErrorTracker_NewResilientHandler_Success_NoLockManagement(t *testing.T)
 	var userHandlerCalled bool
 
 	mockCoordinator := &StateCoordinatorMock{
-		IsLockedFunc: func(_ context.Context, _ *InternalMessage) bool {
+		IsLockedFunc: func(_ context.Context, _ *MessageEnvelope) bool {
 			return false // Key is NOT locked
 		},
-		ReleaseFunc: func(_ context.Context, _ *InternalMessage) error {
+		ReleaseFunc: func(_ context.Context, _ *MessageEnvelope) error {
 			t.Error("Release should NOT be called for main topic messages")
 			return nil
 		},
@@ -1743,7 +1743,7 @@ func TestErrorTracker_NewResilientHandler_Success_NoLockManagement(t *testing.T)
 
 	resilientHandler := tracker.NewResilientHandler(userHandler)
 
-	msg := &InternalMessage{
+	msg := &MessageEnvelope{
 		topic:      "orders",
 		key:        []byte("new-key"),
 		headerData: &HeaderList{},
@@ -1769,10 +1769,10 @@ func TestErrorTracker_NewResilientHandler_Failure_StartsRetryChain(t *testing.T)
 	}
 
 	mockCoordinator := &StateCoordinatorMock{
-		IsLockedFunc: func(_ context.Context, _ *InternalMessage) bool {
+		IsLockedFunc: func(_ context.Context, _ *MessageEnvelope) bool {
 			return false // Key is NOT locked
 		},
-		AcquireFunc: func(_ context.Context, _ string, _ *InternalMessage) error {
+		AcquireFunc: func(_ context.Context, _ string, _ *MessageEnvelope) error {
 			return nil
 		},
 	}
@@ -1800,7 +1800,7 @@ func TestErrorTracker_NewResilientHandler_Failure_StartsRetryChain(t *testing.T)
 
 	resilientHandler := tracker.NewResilientHandler(userHandler)
 
-	msg := &InternalMessage{
+	msg := &MessageEnvelope{
 		topic:      "orders",
 		key:        []byte("failing-key"),
 		headerData: &HeaderList{},

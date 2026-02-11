@@ -71,8 +71,8 @@ type Headers interface {
 	Range(fn func(key string, value []byte) bool)
 }
 
-// InternalMessage is the internal message representation.
-type InternalMessage struct {
+// MessageEnvelope is the internal message representation.
+type MessageEnvelope struct {
 	timestamp  time.Time
 	topic      string
 	key        []byte
@@ -82,13 +82,13 @@ type InternalMessage struct {
 	offset     int64
 }
 
-// NewInternalMessage creates a new InternalMessage with the given topic, key, value, and headers.
-func NewInternalMessage(topic string, key, value []byte, headers *HeaderList) *InternalMessage {
+// NewMessageEnvelope creates a new MessageEnvelope with the given topic, key, value, and headers.
+func NewMessageEnvelope(topic string, key, value []byte, headers *HeaderList) *MessageEnvelope {
 	if headers == nil {
 		headers = &HeaderList{}
 	}
 
-	return &InternalMessage{
+	return &MessageEnvelope{
 		topic:      topic,
 		key:        key,
 		payload:    value,
@@ -97,9 +97,9 @@ func NewInternalMessage(topic string, key, value []byte, headers *HeaderList) *I
 	}
 }
 
-// NewFromMessage creates an InternalMessage by copying all fields and headers from the given Message.
-func NewFromMessage(msg Message) *InternalMessage {
-	im := &InternalMessage{
+// NewFromMessage creates an MessageEnvelope by copying all fields and headers from the given Message.
+func NewFromMessage(msg Message) *MessageEnvelope {
+	im := &MessageEnvelope{
 		topic:      msg.Topic(),
 		partition:  msg.Partition(),
 		offset:     msg.Offset(),
@@ -118,52 +118,52 @@ func NewFromMessage(msg Message) *InternalMessage {
 }
 
 // Topic returns the topic name of the message.
-func (m *InternalMessage) Topic() string {
+func (m *MessageEnvelope) Topic() string {
 	return m.topic
 }
 
 // SetTopic sets the topic name of the message.
-func (m *InternalMessage) SetTopic(topic string) {
+func (m *MessageEnvelope) SetTopic(topic string) {
 	m.topic = topic
 }
 
 // Partition returns the partition of the message.
-func (m *InternalMessage) Partition() int32 {
+func (m *MessageEnvelope) Partition() int32 {
 	return m.partition
 }
 
 // SetPartition sets the partition of the message.
-func (m *InternalMessage) SetPartition(partition int32) {
+func (m *MessageEnvelope) SetPartition(partition int32) {
 	m.partition = partition
 }
 
 // Offset returns the offset of the message.
-func (m *InternalMessage) Offset() int64 {
+func (m *MessageEnvelope) Offset() int64 {
 	return m.offset
 }
 
 // SetOffset sets the offset of the message.
-func (m *InternalMessage) SetOffset(offset int64) {
+func (m *MessageEnvelope) SetOffset(offset int64) {
 	m.offset = offset
 }
 
 // Value returns the message payload.
-func (m *InternalMessage) Value() []byte {
+func (m *MessageEnvelope) Value() []byte {
 	return m.payload
 }
 
 // Key returns the message key.
-func (m *InternalMessage) Key() []byte {
+func (m *MessageEnvelope) Key() []byte {
 	return m.key
 }
 
 // Timestamp returns the message timestamp.
-func (m *InternalMessage) Timestamp() time.Time {
+func (m *MessageEnvelope) Timestamp() time.Time {
 	return m.timestamp
 }
 
 // Headers returns the message headers, initializing the headerData if nil.
-func (m *InternalMessage) Headers() Headers {
+func (m *MessageEnvelope) Headers() Headers {
 	if m.headerData == nil {
 		m.headerData = &HeaderList{}
 	}

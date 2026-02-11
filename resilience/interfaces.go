@@ -12,13 +12,13 @@ type StateCoordinator interface {
 	Start(ctx context.Context, topic string) error
 
 	// Acquire locks the key to ensure strict ordering.
-	Acquire(ctx context.Context, originalTopic string, msg *InternalMessage) error
+	Acquire(ctx context.Context, originalTopic string, msg *MessageEnvelope) error
 
 	// Release unlocks the key.
-	Release(ctx context.Context, msg *InternalMessage) error
+	Release(ctx context.Context, msg *MessageEnvelope) error
 
 	// IsLocked checks if the key is currently locked.
-	IsLocked(ctx context.Context, msg *InternalMessage) bool
+	IsLocked(ctx context.Context, msg *MessageEnvelope) bool
 
 	// Synchronize ensures the coordinator's local state is up-to-date with the distributed source of truth.
 	// This is an OPTIONAL method. By default, the system is eventually consistent during rebalancing.

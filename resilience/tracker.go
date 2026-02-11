@@ -442,12 +442,12 @@ func (t *ErrorTracker) Free(ctx context.Context, msg Message) error {
 	return nil
 }
 
-// redirectMessageWithError is the internal redirect implementation using InternalMessage.
+// redirectMessageWithError is the internal redirect implementation using MessageEnvelope.
 // It calculates retry metadata (attempt count, backoff delay, next retry time),
 // performs atomic lock acquisition and message publishing with compensating rollback,
 // and handles max retries exceeded by sending to DLQ. This is where the core
 // retry orchestration logic lives.
-func (t *ErrorTracker) redirectMessageWithError(ctx context.Context, msg *InternalMessage, lastError error) error {
+func (t *ErrorTracker) redirectMessageWithError(ctx context.Context, msg *MessageEnvelope, lastError error) error {
 	// Check for non-retriable errors - send directly to DLQ, bypassing retry topic
 	var notRetriable *NotRetriableError
 	if errors.As(lastError, &notRetriable) {
@@ -563,7 +563,7 @@ func (t *ErrorTracker) redirectMessageWithError(ctx context.Context, msg *Intern
 // are preserved to maintain context across retries.
 func (t *ErrorTracker) publishToRetry(
 	ctx context.Context,
-	msg *InternalMessage,
+	msg *MessageEnvelope,
 	id string,
 	nextAttempt int,
 	nextRetryTime time.Time,
@@ -597,7 +597,7 @@ func (t *ErrorTracker) publishToRetry(
 	_ = SetHeader[string](retryHeaders, headerRetry, "true")
 	_ = SetHeader[string](retryHeaders, headerTopic, originalTopic)
 
-	retryMsg := &InternalMessage{
+	retryMsg := &MessageEnvelope{
 		topic:      t.RetryTopic(originalTopic),
 		key:        msg.key,
 		payload:    msg.payload,
@@ -647,7 +647,7 @@ func (t *ErrorTracker) SendToDLQ(ctx context.Context, msg Message, lastError err
 		_ = SetHeader[time.Time](dlqHeaders, HeaderDLQOriginalFailureTime, originalTime)
 	}
 
-	dlqMsg := &InternalMessage{
+	dlqMsg := &MessageEnvelope{
 		topic:      t.DLQTopic(originalTopic),
 		key:        internalMsg.key,
 		payload:    internalMsg.payload,
@@ -699,7 +699,7 @@ func (t *ErrorTracker) DLQTopic(topic string) string {
 // It sends the message to DLQ and optionally releases the lock based on FreeOnDLQ config.
 // If FreeOnDLQ is false, the key remains locked, preventing new messages with the same
 // key from processing until manual intervention.
-func (t *ErrorTracker) handleMaxRetriesExceeded(ctx context.Context, message *InternalMessage, currentAttempt, maxRetries int) error {
+func (t *ErrorTracker) handleMaxRetriesExceeded(ctx context.Context, message *MessageEnvelope, currentAttempt, maxRetries int) error {
 	t.logger.Warn("max retries exceeded, sending to DLQ",
 		"topic", message.topic,
 		"current_attempt", currentAttempt,

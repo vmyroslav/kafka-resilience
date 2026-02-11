@@ -16,7 +16,7 @@ func TestLocalStateCoordinator_Acquire(t *testing.T) {
 	coordinator := newLocalStateCoordinator()
 	ctx := t.Context()
 
-	msg := &InternalMessage{
+	msg := &MessageEnvelope{
 		topic:      "orders",
 		key:        []byte("order-123"),
 		headerData: &HeaderList{},
@@ -34,7 +34,7 @@ func TestLocalStateCoordinator_Release(t *testing.T) {
 	coordinator := newLocalStateCoordinator()
 	ctx := t.Context()
 
-	msg := &InternalMessage{
+	msg := &MessageEnvelope{
 		topic:      "orders",
 		key:        []byte("order-123"),
 		headerData: &HeaderList{},
@@ -59,7 +59,7 @@ func TestLocalStateCoordinator_ReferenceCounting(t *testing.T) {
 
 	topic := testTopicOrders
 	key := "ref-key"
-	msg := &InternalMessage{topic: topic, key: []byte(key), headerData: &HeaderList{}}
+	msg := &MessageEnvelope{topic: topic, key: []byte(key), headerData: &HeaderList{}}
 
 	// first Lock
 	err := coordinator.Acquire(ctx, topic, msg)
@@ -104,18 +104,18 @@ func TestLocalStateCoordinator_Isolation(t *testing.T) {
 	ctx := t.Context()
 
 	// lock key A
-	msgA := &InternalMessage{topic: "topic1", key: []byte("keyA"), headerData: &HeaderList{}}
+	msgA := &MessageEnvelope{topic: "topic1", key: []byte("keyA"), headerData: &HeaderList{}}
 	_ = coordinator.Acquire(ctx, "topic1", msgA)
 
 	// check key A is locked
 	assert.True(t, coordinator.IsLocked(ctx, msgA))
 
 	// check key B is NOT locked
-	msgB := &InternalMessage{topic: "topic1", key: []byte("keyB"), headerData: &HeaderList{}}
+	msgB := &MessageEnvelope{topic: "topic1", key: []byte("keyB"), headerData: &HeaderList{}}
 	assert.False(t, coordinator.IsLocked(ctx, msgB))
 
 	// check key A on different topic is NOT locked
-	msgOtherTopic := &InternalMessage{topic: "topic2", key: []byte("keyA"), headerData: &HeaderList{}}
+	msgOtherTopic := &MessageEnvelope{topic: "topic2", key: []byte("keyA"), headerData: &HeaderList{}}
 	assert.False(t, coordinator.IsLocked(ctx, msgOtherTopic))
 }
 
@@ -126,11 +126,11 @@ func TestLocalStateCoordinator_Release_WithHeader(t *testing.T) {
 	ctx := t.Context()
 
 	// acquire on "orders"
-	msg := &InternalMessage{topic: "orders", key: []byte("key1"), headerData: &HeaderList{}}
+	msg := &MessageEnvelope{topic: "orders", key: []byte("key1"), headerData: &HeaderList{}}
 	_ = coordinator.Acquire(ctx, "orders", msg)
 
 	// release using a message with explicit headerTopic (simulating redirect message)
-	releaseMsg := &InternalMessage{
+	releaseMsg := &MessageEnvelope{
 		topic:      "redirect_orders", // different topic
 		key:        []byte("key1"),
 		headerData: &HeaderList{},
@@ -151,7 +151,7 @@ func TestLocalStateCoordinator_ConcurrentAccess(t *testing.T) {
 		coordinator = newLocalStateCoordinator()
 		topic       = "concurrent-topic"
 		key         = "concurrent-key"
-		msg         = &InternalMessage{topic: topic, key: []byte(key), headerData: &HeaderList{}}
+		msg         = &MessageEnvelope{topic: topic, key: []byte(key), headerData: &HeaderList{}}
 		concurrency = 100
 		iterations  = 100
 
@@ -208,7 +208,7 @@ func TestLocalStateCoordinator_Chaos(t *testing.T) {
 				keyStr := string([]byte{byte(keyID)}) // "0", "1", ...
 				topic := testTopicChaos
 
-				msg := &InternalMessage{topic: topic, key: []byte(keyStr), headerData: &HeaderList{}}
+				msg := &MessageEnvelope{topic: topic, key: []byte(keyStr), headerData: &HeaderList{}}
 
 				_ = coordinator.Acquire(ctx, topic, msg)
 

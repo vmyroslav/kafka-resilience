@@ -25,7 +25,7 @@ func (l *localStateCoordinator) Start(_ context.Context, _ string) error {
 }
 
 // Acquire locks the key in local memory.
-func (l *localStateCoordinator) Acquire(_ context.Context, originalTopic string, msg *InternalMessage) error {
+func (l *localStateCoordinator) Acquire(_ context.Context, originalTopic string, msg *MessageEnvelope) error {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
@@ -36,7 +36,7 @@ func (l *localStateCoordinator) Acquire(_ context.Context, originalTopic string,
 }
 
 // Release unlocks the key in local memory.
-func (l *localStateCoordinator) Release(_ context.Context, msg *InternalMessage) error {
+func (l *localStateCoordinator) Release(_ context.Context, msg *MessageEnvelope) error {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
@@ -64,7 +64,7 @@ func (l *localStateCoordinator) Release(_ context.Context, msg *InternalMessage)
 }
 
 // IsLocked checks if the key is currently locked in local memory.
-func (l *localStateCoordinator) IsLocked(_ context.Context, msg *InternalMessage) bool {
+func (l *localStateCoordinator) IsLocked(_ context.Context, msg *MessageEnvelope) bool {
 	l.mu.RLock()
 	defer l.mu.RUnlock()
 
