@@ -145,17 +145,12 @@ type ManualHandler struct {
 func (h *ManualHandler) Handle(ctx context.Context, msg resilience.Message) error {
 	key := string(msg.Key())
 	val := string(msg.Value())
-	isRetry := false
-
-	// Check if this is a retry message
-	if retryHeader, ok := msg.Headers().Get(resilience.HeaderRetry); ok {
-		isRetry = string(retryHeader) == "true"
-	}
-
 	attempt := 0
 	if attemptBytes, ok := msg.Headers().Get(resilience.HeaderRetryAttempt); ok {
 		attempt, _ = strconv.Atoi(string(attemptBytes))
 	}
+
+	isRetry := attempt > 0
 
 	slog.Info("Processing message",
 		"key", key,
