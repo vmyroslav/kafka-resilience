@@ -61,6 +61,11 @@ type Config struct {
 	// Default: false
 	FreeOnDLQ bool
 
+	// WorkerRestartInterval is the delay before restarting a background consumer (retry worker
+	// or redirect consumer) after it exits with an error.
+	// Default: 5s
+	WorkerRestartInterval time.Duration
+
 	// DisableAutoTopicCreation disables automatic creation of retry, redirect, and DLQ topics.
 	// If true, topics must be created manually before use.
 	// Default: false
@@ -80,6 +85,7 @@ func NewDefaultConfig() *Config {
 		FreeOnDLQ:                false,
 		StateRestoreTimeout:      30 * time.Second,
 		StateRestoreIdleTimeout:  5 * time.Second,
+		WorkerRestartInterval:    5 * time.Second,
 		DisableAutoTopicCreation: false,
 	}
 }
@@ -138,6 +144,10 @@ func (c *Config) validateNumericFields(errs []string) []string {
 
 	if c.StateRestoreIdleTimeout < 0 {
 		errs = append(errs, fmt.Sprintf("StateRestoreIdleTimeout must be >= 0, got %v", c.StateRestoreIdleTimeout))
+	}
+
+	if c.WorkerRestartInterval < 0 {
+		errs = append(errs, fmt.Sprintf("WorkerRestartInterval must be >= 0, got %v", c.WorkerRestartInterval))
 	}
 
 	return errs

@@ -284,7 +284,7 @@ func (t *ErrorTracker) startRetryWorker(ctx context.Context, topic string, handl
 		defer t.wg.Done()
 		defer func() { _ = retryConsumer.Close() }()
 
-		backoff := 5 * time.Second
+		backoff := t.cfg.WorkerRestartInterval
 
 		for {
 			err := retryConsumer.Consume(ctx, []string{retryTopic}, workerHandler)
@@ -672,7 +672,6 @@ func (t *ErrorTracker) SendToDLQ(ctx context.Context, msg Message, lastError err
 	t.instruments.dlqEnqueued.Add(ctx, 1,
 		metric.WithAttributes(
 			attribute.String("topic", originalTopic),
-			attribute.String("reason", lastError.Error()),
 		),
 	)
 

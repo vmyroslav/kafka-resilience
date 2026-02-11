@@ -96,8 +96,8 @@ func resolveMeter(meter metric.Meter) metric.Meter {
 	return meter
 }
 
-// NoopMeter returns a no-op meter that discards all metrics.
+// NoOpMeter returns a no-op meter that discards all metrics.
 // Use this to explicitly disable metrics even when a global OTel SDK is registered.
-func NoopMeter() metric.Meter {
+func NoOpMeter() metric.Meter {
 	return noop.Meter{}
 }

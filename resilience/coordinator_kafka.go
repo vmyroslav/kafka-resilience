@@ -554,7 +554,7 @@ func (k *KafkaStateCoordinator) startRedirectConsumer(ctx context.Context, topic
 		defer k.wg.Done()
 		defer func() { _ = consumer.Close() }()
 
-		backoff := 5 * time.Second
+		backoff := k.cfg.WorkerRestartInterval
 
 		for {
 			err := consumer.Consume(ctx, []string{k.redirectTopic(topic)}, &redirectHandler{k: k})

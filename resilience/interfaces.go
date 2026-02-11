@@ -40,7 +40,8 @@ type StateCoordinator interface {
 	Close(ctx context.Context) error
 
 	// Errors returns a read-only channel of background errors from the coordinator.
-	// Implementations without background goroutines may return nil.
+	// The channel is buffered; if the consumer falls behind, new errors are dropped.
+	// The channel is never closed. Implementations without background goroutines may return nil.
 	Errors() <-chan error
 }
 
