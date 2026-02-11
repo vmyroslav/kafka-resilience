@@ -77,22 +77,35 @@ type MessageEnvelope struct {
 	topic      string
 	key        []byte
 	payload    []byte
-	headerData *HeaderList
+	headerData *headerList
 	partition  int32
 	offset     int64
 }
 
+// NewHeaders creates a new empty Headers instance.
+func NewHeaders() Headers {
+	return &headerList{}
+}
+
 // NewMessageEnvelope creates a new MessageEnvelope with the given topic, key, value, and headers.
-func NewMessageEnvelope(topic string, key, value []byte, headers *HeaderList) *MessageEnvelope {
-	if headers == nil {
-		headers = &HeaderList{}
+func NewMessageEnvelope(topic string, key, value []byte, headers Headers) *MessageEnvelope {
+	hl, _ := headers.(*headerList)
+	if hl == nil {
+		hl = &headerList{}
+
+		if headers != nil {
+			headers.Range(func(key string, value []byte) bool {
+				hl.Set(key, value)
+				return true
+			})
+		}
 	}
 
 	return &MessageEnvelope{
 		topic:      topic,
 		key:        key,
 		payload:    value,
-		headerData: headers,
+		headerData: hl,
 		timestamp:  time.Now(),
 	}
 }
@@ -106,7 +119,7 @@ func NewFromMessage(msg Message) *MessageEnvelope {
 		key:        msg.Key(),
 		payload:    msg.Value(),
 		timestamp:  msg.Timestamp(),
-		headerData: &HeaderList{},
+		headerData: &headerList{},
 	}
 
 	msg.Headers().Range(func(key string, value []byte) bool {
@@ -165,110 +178,110 @@ func (m *MessageEnvelope) Timestamp() time.Time {
 // Headers returns the message headers, initializing the headerData if nil.
 func (m *MessageEnvelope) Headers() Headers {
 	if m.headerData == nil {
-		m.headerData = &HeaderList{}
+		m.headerData = &headerList{}
 	}
 
 	return m.headerData
 }
 
-type Header struct {
+type header struct {
 	Key   []byte
 	Value []byte
 }
 
-type HeaderList struct {
-	list []Header
+type headerList struct {
+	list []header
 	mu   sync.RWMutex
 }
 
-func (h *HeaderList) Get(key string) ([]byte, bool) {
+func (h *headerList) Get(key string) ([]byte, bool) {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 
-	for _, header := range h.list {
-		if string(header.Key) == key {
-			return header.Value, true
+	for _, hdr := range h.list {
+		if string(hdr.Key) == key {
+			return hdr.Value, true
 		}
 	}
 
 	return nil, false
 }
 
-func (h *HeaderList) Set(key string, value []byte) {
+func (h *headerList) Set(key string, value []byte) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
 	// find and update existing header in list to preserve order
-	for i, header := range h.list {
-		if string(header.Key) == key {
+	for i, hdr := range h.list {
+		if string(hdr.Key) == key {
 			h.list[i].Value = value
 			return
 		}
 	}
 
 	// add new header if not found
-	h.list = append(h.list, Header{
+	h.list = append(h.list, header{
 		Key:   []byte(key),
 		Value: value,
 	})
 }
 
-func (h *HeaderList) All() map[string][]byte {
+func (h *headerList) All() map[string][]byte {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 
 	result := make(map[string][]byte, len(h.list))
-	for _, header := range h.list {
-		result[string(header.Key)] = header.Value
+	for _, hdr := range h.list {
+		result[string(hdr.Key)] = hdr.Value
 	}
 
 	return result
 }
 
-func (h *HeaderList) Delete(key string) {
+func (h *headerList) Delete(key string) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
-	newHeaders := make([]Header, 0, len(h.list))
-	for _, header := range h.list {
-		if string(header.Key) != key {
-			newHeaders = append(newHeaders, header)
+	newHeaders := make([]header, 0, len(h.list))
+	for _, hdr := range h.list {
+		if string(hdr.Key) != key {
+			newHeaders = append(newHeaders, hdr)
 		}
 	}
 
 	h.list = newHeaders
 }
 
-func (h *HeaderList) Clone() Headers {
+func (h *headerList) Clone() Headers {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 
-	cloned := &HeaderList{
-		list: make([]Header, len(h.list)),
+	cloned := &headerList{
+		list: make([]header, len(h.list)),
 	}
 
-	for i, header := range h.list {
-		cloned.list[i] = Header{
-			Key:   append([]byte(nil), header.Key...),
-			Value: append([]byte(nil), header.Value...),
+	for i, hdr := range h.list {
+		cloned.list[i] = header{
+			Key:   append([]byte(nil), hdr.Key...),
+			Value: append([]byte(nil), hdr.Value...),
 		}
 	}
 
 	return cloned
 }
 
-func (h *HeaderList) Range(fn func(key string, value []byte) bool) {
+func (h *headerList) Range(fn func(key string, value []byte) bool) {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 
-	for _, header := range h.list {
-		if !fn(string(header.Key), header.Value) {
+	for _, hdr := range h.list {
+		if !fn(string(hdr.Key), hdr.Value) {
 			break
 		}
 	}
 }
 
-func GetHeaderValue[T any](h *HeaderList, key string) (T, bool) {
+func GetHeaderValue[T any](h Headers, key string) (T, bool) {
 	var zero T
 	if h == nil {
 		return zero, false
@@ -318,7 +331,7 @@ func GetHeaderValue[T any](h *HeaderList, key string) (T, bool) {
 // SetHeader updates or adds a header with the given key and value.
 // Supported types: string, int, time.Time. Returns an error if an unsupported type is provided.
 // If h is nil, this is a no-op and returns nil.
-func SetHeader[T any](h *HeaderList, key string, value T) error {
+func SetHeader[T any](h Headers, key string, value T) error {
 	if h == nil {
 		return nil
 	}

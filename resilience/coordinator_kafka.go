@@ -134,7 +134,7 @@ func (k *KafkaStateCoordinator) Acquire(ctx context.Context, originalTopic strin
 
 	// use a clone of the original headers to ensure we preserve any metadata
 	// while adding coordinator-specific headers.
-	redirectHeaders, _ := msg.headerData.Clone().(*HeaderList)
+	redirectHeaders, _ := msg.headerData.Clone().(*headerList)
 	redirectHeaders.Set(headerTopic, []byte(originalTopic))
 	redirectHeaders.Set(headerKey, msg.key)
 	redirectHeaders.Set(headerCoordinatorID, []byte(k.instanceID))
@@ -218,7 +218,7 @@ func (k *KafkaStateCoordinator) Release(ctx context.Context, msg *MessageEnvelop
 	}
 
 	// use a clone of the original headers to ensure we preserve metadata (like headerID)
-	tombstoneHeaders, _ := msg.headerData.Clone().(*HeaderList)
+	tombstoneHeaders, _ := msg.headerData.Clone().(*headerList)
 	tombstoneHeaders.Set(headerTopic, []byte(topic))
 	tombstoneHeaders.Set(headerKey, msg.key)
 	tombstoneHeaders.Set(headerCoordinatorID, []byte(k.instanceID))
@@ -619,7 +619,7 @@ func (k *KafkaStateCoordinator) processRedirectMessage(ctx context.Context, msg 
 	originalMsg := &MessageEnvelope{
 		topic:      string(originalTopicBytes),
 		key:        originalKeyBytes,
-		headerData: &HeaderList{},
+		headerData: &headerList{},
 	}
 
 	// delegate to local coordinator

@@ -68,7 +68,7 @@ func TestErrorTracker_Redirect_Rollback(t *testing.T) {
 	msg := &MessageEnvelope{
 		topic:      "orders",
 		key:        []byte("order-1"),
-		headerData: &HeaderList{},
+		headerData: &headerList{},
 	}
 
 	// 2. Execute Redirect
@@ -137,7 +137,7 @@ func TestErrorTracker_Redirect_RollbackFailure_LogsCriticalError(t *testing.T) {
 	msg := &MessageEnvelope{
 		topic:      "orders",
 		key:        []byte("zombie-key"),
-		headerData: &HeaderList{},
+		headerData: &headerList{},
 	}
 
 	// Execute Redirect - both produce and rollback will fail
@@ -201,7 +201,7 @@ func TestErrorTracker_Redirect_RollbackSuccess_KeyNotLocked(t *testing.T) {
 	msg := &MessageEnvelope{
 		topic:      "orders",
 		key:        []byte("order-123"),
-		headerData: &HeaderList{},
+		headerData: &headerList{},
 	}
 
 	// Before redirect: key is not locked
@@ -259,7 +259,7 @@ func TestErrorTracker_NotRetriableError_GoesDirectlyToDLQ(t *testing.T) {
 	msg := &MessageEnvelope{
 		topic:      "orders",
 		key:        []byte("invalid-order"),
-		headerData: &HeaderList{},
+		headerData: &headerList{},
 	}
 
 	// Redirect with NotRetriableError
@@ -408,7 +408,7 @@ func TestErrorTracker_Redirect_HappyPath(t *testing.T) {
 	msg := &MessageEnvelope{
 		topic:      "orders",
 		key:        []byte("order-1"),
-		headerData: &HeaderList{},
+		headerData: &headerList{},
 	}
 
 	err = tracker.Redirect(context.Background(), msg, errors.New("fail"))
@@ -456,7 +456,7 @@ func TestErrorTracker_Redirect_AlreadyInRetry_SkipsLockAcquisition(t *testing.T)
 	require.NoError(t, err)
 
 	// Message that's already in the retry chain
-	headers := &HeaderList{}
+	headers := &headerList{}
 	_ = SetHeader[string](headers, headerRetry, "true")
 	_ = SetHeader[string](headers, headerID, "existing-lock-id")
 	_ = SetHeader[string](headers, headerTopic, "orders")
@@ -521,7 +521,7 @@ func TestErrorTracker_Redirect_IncrementsAttemptCounter(t *testing.T) {
 	msg := &MessageEnvelope{
 		topic:      "orders",
 		key:        []byte("order-1"),
-		headerData: &HeaderList{},
+		headerData: &headerList{},
 	}
 
 	err = tracker.Redirect(context.Background(), msg, errors.New("fail"))
@@ -533,7 +533,7 @@ func TestErrorTracker_Redirect_IncrementsAttemptCounter(t *testing.T) {
 	assert.Equal(t, "1", string(attemptBytes))
 
 	// Second redirect (simulating retry message with attempt=1)
-	headers := &HeaderList{}
+	headers := &headerList{}
 	_ = SetHeader[string](headers, headerRetry, "true")
 	_ = SetHeader[string](headers, headerID, "lock-id")
 	_ = SetHeader[string](headers, headerTopic, "orders")
@@ -589,7 +589,7 @@ func TestErrorTracker_Redirect_PreservesUserHeaders(t *testing.T) {
 	require.NoError(t, err)
 
 	// Message with custom user headers
-	headers := &HeaderList{}
+	headers := &headerList{}
 	headers.Set("x-correlation-id", []byte("corr-123"))
 	headers.Set("x-trace-id", []byte("trace-456"))
 	headers.Set("x-custom-header", []byte("custom-value"))
@@ -665,7 +665,7 @@ func TestErrorTracker_Redirect_PreservesOriginalTopic(t *testing.T) {
 	require.NoError(t, err)
 
 	// Message coming from retry topic with original topic in headers
-	headers := &HeaderList{}
+	headers := &headerList{}
 	_ = SetHeader[string](headers, headerRetry, "true")
 	_ = SetHeader[string](headers, headerID, "lock-id")
 	_ = SetHeader[string](headers, headerTopic, "original-orders") // Original topic
@@ -724,7 +724,7 @@ func TestErrorTracker_Redirect_AcquireFailure_ReturnsError(t *testing.T) {
 	msg := &MessageEnvelope{
 		topic:      "orders",
 		key:        []byte("order-1"),
-		headerData: &HeaderList{},
+		headerData: &headerList{},
 	}
 
 	err = tracker.Redirect(context.Background(), msg, errors.New("business error"))
@@ -777,7 +777,7 @@ func TestErrorTracker_Redirect_SetsRetryMetadataHeaders(t *testing.T) {
 		topic:      "orders",
 		key:        []byte("order-1"),
 		payload:    []byte("payload"),
-		headerData: &HeaderList{},
+		headerData: &headerList{},
 	}
 
 	err = tracker.Redirect(context.Background(), msg, errors.New("business error"))
@@ -843,7 +843,7 @@ func TestErrorTracker_Free_HappyPath(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	headers := &HeaderList{}
+	headers := &headerList{}
 	_ = SetHeader[string](headers, headerID, "lock-id-123")
 	_ = SetHeader[string](headers, headerTopic, "orders")
 
@@ -884,7 +884,7 @@ func TestErrorTracker_Free_CoordinatorFailure_ReturnsError(t *testing.T) {
 	msg := &MessageEnvelope{
 		topic:      "retry_orders",
 		key:        []byte("order-1"),
-		headerData: &HeaderList{},
+		headerData: &headerList{},
 	}
 
 	err = tracker.Free(context.Background(), msg)
@@ -922,7 +922,7 @@ func TestErrorTracker_Free_WithMissingHeaders_StillCallsRelease(t *testing.T) {
 	msg := &MessageEnvelope{
 		topic:      "retry_orders",
 		key:        []byte("order-1"),
-		headerData: &HeaderList{},
+		headerData: &headerList{},
 	}
 
 	err = tracker.Free(context.Background(), msg)
@@ -969,7 +969,7 @@ func TestErrorTracker_SendToDLQ_HappyPath(t *testing.T) {
 		topic:      "orders",
 		key:        []byte("order-1"),
 		payload:    []byte(`{"order": "data"}`),
-		headerData: &HeaderList{},
+		headerData: &headerList{},
 	}
 
 	err = tracker.SendToDLQ(context.Background(), msg, errors.New("max retries exceeded"))
@@ -1022,7 +1022,7 @@ func TestErrorTracker_SendToDLQ_PreservesOriginalTopicFromHeader(t *testing.T) {
 	require.NoError(t, err)
 
 	// Message from retry topic with original topic in header
-	headers := &HeaderList{}
+	headers := &headerList{}
 	_ = SetHeader[string](headers, headerTopic, "original-orders")
 
 	msg := &MessageEnvelope{
@@ -1064,7 +1064,7 @@ func TestErrorTracker_SendToDLQ_IncludesRetryAttemptCount(t *testing.T) {
 	require.NoError(t, err)
 
 	// Message that has gone through 3 retry attempts
-	headers := &HeaderList{}
+	headers := &headerList{}
 	_ = SetHeader[int](headers, HeaderRetryAttempt, 3)
 	_ = SetHeader[string](headers, headerTopic, "orders")
 
@@ -1108,7 +1108,7 @@ func TestErrorTracker_SendToDLQ_ProducerFailure_ReturnsError(t *testing.T) {
 	msg := &MessageEnvelope{
 		topic:      "orders",
 		key:        []byte("order-1"),
-		headerData: &HeaderList{},
+		headerData: &headerList{},
 	}
 
 	err = tracker.SendToDLQ(context.Background(), msg, errors.New("some error"))
@@ -1156,7 +1156,7 @@ func TestErrorTracker_MaxRetriesExceeded_SendsToDLQ(t *testing.T) {
 	require.NoError(t, err)
 
 	// Message that has already reached max retries
-	headers := &HeaderList{}
+	headers := &headerList{}
 	_ = SetHeader[int](headers, HeaderRetryAttempt, 3) // Equal to MaxRetries
 	_ = SetHeader[string](headers, headerRetry, "true")
 	_ = SetHeader[string](headers, headerID, "lock-id")
@@ -1211,7 +1211,7 @@ func TestErrorTracker_MaxRetriesExceeded_FreeOnDLQ_True_ReleasesLock(t *testing.
 	)
 	require.NoError(t, err)
 
-	headers := &HeaderList{}
+	headers := &headerList{}
 	_ = SetHeader[int](headers, HeaderRetryAttempt, 3)
 	_ = SetHeader[string](headers, headerRetry, "true")
 	_ = SetHeader[string](headers, headerID, "lock-id")
@@ -1263,7 +1263,7 @@ func TestErrorTracker_MaxRetriesExceeded_FreeOnDLQ_False_KeepsLock(t *testing.T)
 	)
 	require.NoError(t, err)
 
-	headers := &HeaderList{}
+	headers := &headerList{}
 	_ = SetHeader[int](headers, HeaderRetryAttempt, 3)
 	_ = SetHeader[string](headers, headerRetry, "true")
 	_ = SetHeader[string](headers, headerID, "lock-id")
@@ -1302,7 +1302,7 @@ func TestErrorTracker_WaitForRetryTime_NoHeader_ReturnsImmediately(t *testing.T)
 	msg := &MessageEnvelope{
 		topic:      "retry_orders",
 		key:        []byte("order-1"),
-		headerData: &HeaderList{}, // No headers
+		headerData: &headerList{}, // No headers
 	}
 
 	start := time.Now()
@@ -1332,7 +1332,7 @@ func TestErrorTracker_WaitForRetryTime_PastTime_ReturnsImmediately(t *testing.T)
 
 	// Set retry time to 1 hour ago
 	pastTime := time.Now().Add(-1 * time.Hour)
-	headers := &HeaderList{}
+	headers := &headerList{}
 	_ = SetHeader[time.Time](headers, HeaderRetryNextTime, pastTime)
 
 	msg := &MessageEnvelope{
@@ -1369,7 +1369,7 @@ func TestErrorTracker_WaitForRetryTime_FutureTime_Waits(t *testing.T) {
 
 	// Set retry time to 1.5 seconds in the future (to account for second granularity)
 	futureTime := time.Now().Add(1500 * time.Millisecond)
-	headers := &HeaderList{}
+	headers := &headerList{}
 	_ = SetHeader[time.Time](headers, HeaderRetryNextTime, futureTime)
 
 	msg := &MessageEnvelope{
@@ -1407,7 +1407,7 @@ func TestErrorTracker_WaitForRetryTime_ContextCancellation_ReturnsError(t *testi
 
 	// Set retry time to 5 seconds in the future
 	futureTime := time.Now().Add(5 * time.Second)
-	headers := &HeaderList{}
+	headers := &headerList{}
 	_ = SetHeader[time.Time](headers, HeaderRetryNextTime, futureTime)
 
 	msg := &MessageEnvelope{
@@ -1453,7 +1453,7 @@ func TestErrorTracker_WaitForRetryTime_CorruptedTimestamp_ReturnsImmediately(t *
 	require.NoError(t, err)
 
 	// Set corrupted timestamp header (not a valid Unix timestamp)
-	headers := &HeaderList{}
+	headers := &headerList{}
 	headers.Set(HeaderRetryNextTime, []byte("not-a-timestamp"))
 
 	msg := &MessageEnvelope{
@@ -1696,7 +1696,7 @@ func TestErrorTracker_NewResilientHandler_KeyInRetryChain_AutoRedirects(t *testi
 	msg := &MessageEnvelope{
 		topic:      "orders",
 		key:        []byte("locked-key"),
-		headerData: &HeaderList{},
+		headerData: &headerList{},
 	}
 
 	err = resilientHandler.Handle(context.Background(), msg)
@@ -1746,7 +1746,7 @@ func TestErrorTracker_NewResilientHandler_Success_NoLockManagement(t *testing.T)
 	msg := &MessageEnvelope{
 		topic:      "orders",
 		key:        []byte("new-key"),
-		headerData: &HeaderList{},
+		headerData: &headerList{},
 	}
 
 	err = resilientHandler.Handle(context.Background(), msg)
@@ -1803,7 +1803,7 @@ func TestErrorTracker_NewResilientHandler_Failure_StartsRetryChain(t *testing.T)
 	msg := &MessageEnvelope{
 		topic:      "orders",
 		key:        []byte("failing-key"),
-		headerData: &HeaderList{},
+		headerData: &headerList{},
 	}
 
 	err = resilientHandler.Handle(context.Background(), msg)

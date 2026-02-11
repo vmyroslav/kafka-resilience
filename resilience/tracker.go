@@ -571,8 +571,8 @@ func (t *ErrorTracker) publishToRetry(
 	lastError error,
 	originalTopic string,
 ) error {
-	retryHeaders := &HeaderList{
-		list: make([]Header, 0, len(msg.headerData.list)+6),
+	retryHeaders := &headerList{
+		list: make([]header, 0, len(msg.headerData.list)+6),
 	}
 	for _, h := range msg.headerData.list {
 		key := string(h.Key)
@@ -626,8 +626,8 @@ func (t *ErrorTracker) SendToDLQ(ctx context.Context, msg Message, lastError err
 	originalTime, _ := GetHeaderValue[time.Time](internalMsg.headerData, HeaderRetryOriginalTime)
 
 	// Copy original message headers (excluding retry headers)
-	dlqHeaders := &HeaderList{
-		list: make([]Header, 0, len(internalMsg.headerData.list)+4),
+	dlqHeaders := &headerList{
+		list: make([]header, 0, len(internalMsg.headerData.list)+4),
 	}
 	for _, h := range internalMsg.headerData.list {
 		key := string(h.Key)

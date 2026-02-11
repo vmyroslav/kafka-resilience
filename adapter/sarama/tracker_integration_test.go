@@ -693,9 +693,9 @@ func (h *dlqTestHandler) ConsumeClaim(session sarama.ConsumerGroupSession, claim
 	return nil
 }
 
-// mapSaramaHeaders converts Sarama headers to retry.HeaderList
-func mapSaramaHeaders(headers []*sarama.RecordHeader) *resilience.HeaderList {
-	result := &resilience.HeaderList{}
+// mapSaramaHeaders converts Sarama headers to resilience.Headers
+func mapSaramaHeaders(headers []*sarama.RecordHeader) resilience.Headers {
+	result := resilience.NewHeaders()
 	for _, h := range headers {
 		result.Set(string(h.Key), h.Value)
 	}

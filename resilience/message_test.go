@@ -26,7 +26,7 @@ func TestHeaderList(t *testing.T) {
 		t.Run(tt.key, func(t *testing.T) {
 			t.Parallel()
 
-			var hl HeaderList
+			var hl headerList
 
 			err := SetHeader[string](&hl, tt.key, tt.val)
 			require.NoError(t, err)
@@ -42,7 +42,7 @@ func TestHeaderList(t *testing.T) {
 func TestHeaderListUpdate(t *testing.T) {
 	t.Parallel()
 
-	var hl HeaderList
+	var hl headerList
 
 	err := SetHeader[string](&hl, "key", "value-1")
 	require.NoError(t, err)
@@ -59,7 +59,7 @@ func TestHeaderListUpdate(t *testing.T) {
 func TestHeaderGet(t *testing.T) {
 	t.Parallel()
 
-	var hl HeaderList
+	var hl headerList
 
 	err := SetHeader[string](&hl, "key1", "value-1")
 	require.NoError(t, err)
@@ -84,7 +84,7 @@ func TestHeaderGet(t *testing.T) {
 func TestSetHeader_UnsupportedType(t *testing.T) {
 	t.Parallel()
 
-	var hl HeaderList
+	var hl headerList
 
 	// unsupported type (float64)
 	err := SetHeader[float64](&hl, "key", 3.14)
