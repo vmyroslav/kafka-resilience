@@ -223,7 +223,7 @@ func TestIntegration_KafkaCoordinator_Rebalance(t *testing.T) {
 	cfgA := resilience.NewDefaultConfig()
 	cfgA.GroupID = groupID
 	cfgA.RetryTopicPartitions = 1
-	cfgA.StateRestoreIdleTimeoutMs = 1000
+	cfgA.StateRestoreIdleTimeout = 1 * time.Second
 
 	coordA := resilience.NewKafkaStateCoordinator(
 		cfgA, sharedLogger.With("component", "InstanceA"),
@@ -257,7 +257,7 @@ func TestIntegration_KafkaCoordinator_Rebalance(t *testing.T) {
 	cfgB := resilience.NewDefaultConfig()
 	cfgB.GroupID = groupID // Same Group ID
 	cfgB.RetryTopicPartitions = 1
-	cfgB.StateRestoreIdleTimeoutMs = 1000
+	cfgB.StateRestoreIdleTimeout = 1 * time.Second
 
 	coordB := resilience.NewKafkaStateCoordinator(
 		cfgB, sharedLogger.With("component", "InstanceB"),
@@ -357,8 +357,8 @@ func TestIntegration_RestartRestoration(t *testing.T) {
 	cfg.GroupID = groupID
 	cfg.MaxRetries = 3
 	cfg.RetryTopicPartitions = 1
-	cfg.StateRestoreTimeoutMs = 15000
-	cfg.StateRestoreIdleTimeoutMs = 6000
+	cfg.StateRestoreTimeout = 15 * time.Second
+	cfg.StateRestoreIdleTimeout = 6 * time.Second
 
 	// -------------------------------------------------------------------------
 	// PHASE 1: Populate State (Application Instance 1)
@@ -499,8 +499,8 @@ func TestIntegration_TombstoneRestoration(t *testing.T) {
 	cfg.GroupID = groupID
 	cfg.MaxRetries = 3
 	cfg.RetryTopicPartitions = 1
-	cfg.StateRestoreTimeoutMs = 15000
-	cfg.StateRestoreIdleTimeoutMs = 6000
+	cfg.StateRestoreTimeout = 15 * time.Second
+	cfg.StateRestoreIdleTimeout = 6 * time.Second
 
 	// create first tracker and start tracking
 	coord1 := resilience.NewKafkaStateCoordinator(

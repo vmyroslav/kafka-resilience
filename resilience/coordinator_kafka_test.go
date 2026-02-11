@@ -183,8 +183,8 @@ func TestKafkaStateCoordinator_Start_RestoresState(t *testing.T) {
 	}
 
 	cfg := &Config{
-		RedirectTopicPrefix:   "redirect",
-		StateRestoreTimeoutMs: 100,
+		RedirectTopicPrefix: "redirect",
+		StateRestoreTimeout: 100 * time.Millisecond,
 	}
 
 	coordinator := NewKafkaStateCoordinator(
@@ -394,7 +394,7 @@ func TestKafkaStateCoordinator_Rebalance_Simulation(t *testing.T) {
 	}
 
 	coordinator := NewKafkaStateCoordinator(
-		&Config{RedirectTopicPrefix: "redirect", StateRestoreTimeoutMs: 100},
+		&Config{RedirectTopicPrefix: "redirect", StateRestoreTimeout: 100 * time.Millisecond},
 		&LoggerMock{DebugFunc: func(_ string, _ ...any) {}, InfoFunc: func(_ string, _ ...any) {}},
 		&ProducerMock{},
 		mockFactory,

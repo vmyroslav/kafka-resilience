@@ -307,8 +307,8 @@ func (k *KafkaStateCoordinator) Synchronize(ctx context.Context) error {
 
 	// default timeout
 	timeout := 30 * time.Second
-	if k.cfg.StateRestoreTimeoutMs > 0 {
-		timeout = time.Duration(k.cfg.StateRestoreTimeoutMs) * time.Millisecond
+	if k.cfg.StateRestoreTimeout > 0 {
+		timeout = k.cfg.StateRestoreTimeout
 	}
 
 	deadline := time.Now().Add(timeout)
@@ -512,7 +512,7 @@ func (k *KafkaStateCoordinator) restoreState(ctx context.Context, topic string) 
 
 	// safety timeout in case we never reach HWM (if HWM moves while consuming)
 	// ideally, we should read until the "snapshot" of HWM we took at the start
-	timeout := time.Duration(k.cfg.StateRestoreTimeoutMs) * time.Millisecond
+	timeout := k.cfg.StateRestoreTimeout
 	if timeout == 0 {
 		timeout = 30 * time.Second
 	}

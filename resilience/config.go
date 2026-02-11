@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 )
 
 // Config holds configuration for the retry mechanism.
@@ -35,15 +36,15 @@ type Config struct {
 	// Default: -2 (OffsetOldest)
 	InitialOffset int64
 
-	// StateRestoreTimeoutMs is the maximum time in milliseconds to wait for the redirect topic
+	// StateRestoreTimeout is the maximum time to wait for the redirect topic
 	// state restoration to complete before starting message processing.
-	// Default: 30000 (30 seconds)
-	StateRestoreTimeoutMs int64
+	// Default: 30s
+	StateRestoreTimeout time.Duration
 
-	// StateRestoreIdleTimeoutMs is the idle time in milliseconds to wait after the last message
+	// StateRestoreIdleTimeout is the idle time to wait after the last message
 	// during state restoration before considering the restoration complete.
-	// Default: 5000 (5 seconds)
-	StateRestoreIdleTimeoutMs int64
+	// Default: 5s
+	StateRestoreIdleTimeout time.Duration
 
 	// RetryTopicPartitions specifies the number of partitions for auto-created retry topics.
 	// 0 means use the same number of partitions as the original topic.
@@ -69,17 +70,17 @@ type Config struct {
 // NewDefaultConfig creates a Config with sensible defaults.
 func NewDefaultConfig() *Config {
 	return &Config{
-		RedirectTopicPrefix:       "redirect",
-		DLQTopicPrefix:            "dlq",
-		RetryTopicPrefix:          "retry",
-		MaxRetries:                5,
-		RetryTopicPartitions:      0,
-		ReplicationFactor:         1,
-		InitialOffset:             -2, // OffsetOldest
-		FreeOnDLQ:                 false,
-		StateRestoreTimeoutMs:     30000, // 30 seconds
-		StateRestoreIdleTimeoutMs: 5000,  // 5 seconds
-		DisableAutoTopicCreation:  false,
+		RedirectTopicPrefix:      "redirect",
+		DLQTopicPrefix:           "dlq",
+		RetryTopicPrefix:         "retry",
+		MaxRetries:               5,
+		RetryTopicPartitions:     0,
+		ReplicationFactor:        1,
+		InitialOffset:            -2, // OffsetOldest
+		FreeOnDLQ:                false,
+		StateRestoreTimeout:      30 * time.Second,
+		StateRestoreIdleTimeout:  5 * time.Second,
+		DisableAutoTopicCreation: false,
 	}
 }
 
@@ -131,12 +132,12 @@ func (c *Config) validateNumericFields(errs []string) []string {
 		errs = append(errs, fmt.Sprintf("RetryTopicPartitions must be >= 0, got %d", c.RetryTopicPartitions))
 	}
 
-	if c.StateRestoreTimeoutMs < 0 {
-		errs = append(errs, fmt.Sprintf("StateRestoreTimeoutMs must be >= 0, got %d", c.StateRestoreTimeoutMs))
+	if c.StateRestoreTimeout < 0 {
+		errs = append(errs, fmt.Sprintf("StateRestoreTimeout must be >= 0, got %v", c.StateRestoreTimeout))
 	}
 
-	if c.StateRestoreIdleTimeoutMs < 0 {
-		errs = append(errs, fmt.Sprintf("StateRestoreIdleTimeoutMs must be >= 0, got %d", c.StateRestoreIdleTimeoutMs))
+	if c.StateRestoreIdleTimeout < 0 {
+		errs = append(errs, fmt.Sprintf("StateRestoreIdleTimeout must be >= 0, got %v", c.StateRestoreIdleTimeout))
 	}
 
 	return errs

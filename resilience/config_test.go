@@ -121,18 +121,18 @@ func TestConfig_Validate_InvalidNumericValues(t *testing.T) {
 			expectedError: "RetryTopicPartitions must be >= 0",
 		},
 		{
-			name: "negative StateRestoreTimeoutMs",
+			name: "negative StateRestoreTimeout",
 			modifyConfig: func(c *Config) {
-				c.StateRestoreTimeoutMs = -1
+				c.StateRestoreTimeout = -1
 			},
-			expectedError: "StateRestoreTimeoutMs must be >= 0",
+			expectedError: "StateRestoreTimeout must be >= 0",
 		},
 		{
-			name: "negative StateRestoreIdleTimeoutMs",
+			name: "negative StateRestoreIdleTimeout",
 			modifyConfig: func(c *Config) {
-				c.StateRestoreIdleTimeoutMs = -1
+				c.StateRestoreIdleTimeout = -1
 			},
-			expectedError: "StateRestoreIdleTimeoutMs must be >= 0",
+			expectedError: "StateRestoreIdleTimeout must be >= 0",
 		},
 	}
 
