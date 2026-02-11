@@ -125,8 +125,9 @@ cfg := resilience.NewDefaultConfig()
 | `ReplicationFactor` | `1` | Replication factor for auto-created topics. Use `3` in production |
 | `FreeOnDLQ` | `false` | Release lock when message hits DLQ. `false` = key stays locked for manual intervention |
 | `DisableAutoTopicCreation` | `false` | Disable automatic topic creation |
-| `StateRestoreTimeoutMs` | `30000` | Max wait for state restore on startup (ms) |
-| `StateRestoreIdleTimeoutMs` | `5000` | Idle timeout during state restoration (ms) |
+| `StateRestoreTimeout` | `30s` | Max wait for state restore on startup |
+| `StateRestoreIdleTimeout` | `5s` | Idle timeout during state restoration |
+| `WorkerRestartInterval` | `5s` | Delay before restarting a failed background consumer |
 
 ## Advanced Usage
 
@@ -136,11 +137,13 @@ The tracker exposes background errors (coordinator failures, produce errors) via
 
 ```go
 go func() {
-    for err := range tracker.Errors() {
+    for err := range tracker.Errors() { // channel is buffered (16) and never closed
         log.Error("resilience error", "err", err)
     }
 }()
 ```
+
+> **Note:** The error channel is buffered (capacity 16) and is never closed. If your consumer falls behind, new errors are silently dropped. Returns `nil` if the coordinator does not produce background errors.
 
 ### Granular Control
 
@@ -206,7 +209,7 @@ This blocks until local state is fully synced with the distributed log, preventi
 
 ```go
 // Exponential (default): 1s, 2s, 4s, 8s... capped at 5m
-saramaadapter.WithBackoff(resilience.NewExponentialBackoff())
+resilience.WithBackoff(resilience.NewExponentialBackoff())
 
 // Custom exponential
 backoff, _ := resilience.NewExponentialBackoffWithConfig(
@@ -239,11 +242,11 @@ Built-in OpenTelemetry metrics:
 ```go
 // Custom meter
 tracker, _ := saramaadapter.NewResilienceTracker(cfg, client,
-    saramaadapter.WithMeter(provider.Meter("my-app")))
+    resilience.WithMeter(provider.Meter("my-app")))
 
-// Explicitly disable
+// Explicitly disable (even when a global OTel SDK is registered)
 tracker, _ := saramaadapter.NewResilienceTracker(cfg, client,
-    saramaadapter.WithNoMetrics())
+    resilience.WithMeter(resilience.NoOpMeter()))
 ```
 
 ## Status
