@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 
 	"github.com/IBM/sarama"
 	"github.com/vmyroslav/kafka-resilience/resilience"
@@ -91,7 +92,7 @@ func (a *AdminAdapter) DescribeTopics(_ context.Context, topics []string) ([]res
 
 		result = append(result, &topicMetadata{
 			name:       md.Name,
-			partitions: int32(len(md.Partitions)),
+			partitions: int32(min(len(md.Partitions), math.MaxInt32)),
 			offsets:    offsets,
 		})
 	}
@@ -101,12 +102,7 @@ func (a *AdminAdapter) DescribeTopics(_ context.Context, topics []string) ([]res
 
 // DeleteConsumerGroup deletes the specified consumer group.
 func (a *AdminAdapter) DeleteConsumerGroup(_ context.Context, groupID string) error {
-	err := a.admin.DeleteConsumerGroup(groupID)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return a.admin.DeleteConsumerGroup(groupID)
 }
 
 // Close closes the admin connection.

@@ -146,8 +146,8 @@ func (c *Config) validateNumericFields(errs []string) []string {
 		errs = append(errs, fmt.Sprintf("StateRestoreIdleTimeout must be >= 0, got %v", c.StateRestoreIdleTimeout))
 	}
 
-	if c.WorkerRestartInterval < 0 {
-		errs = append(errs, fmt.Sprintf("WorkerRestartInterval must be >= 0, got %v", c.WorkerRestartInterval))
+	if c.WorkerRestartInterval <= 0 {
+		errs = append(errs, fmt.Sprintf("WorkerRestartInterval must be > 0, got %v", c.WorkerRestartInterval))
 	}
 
 	return errs

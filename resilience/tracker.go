@@ -716,11 +716,11 @@ func (t *ErrorTracker) handleMaxRetriesExceeded(ctx context.Context, message *Me
 
 	// Get the last error reason from headers
 	lastErrorReason, _ := GetHeaderValue[string](message.headerData, HeaderRetryReason)
+	if lastErrorReason == "" {
+		lastErrorReason = "max retries exceeded"
+	}
 
 	lastError := errors.New(lastErrorReason)
-	if lastErrorReason == "" {
-		lastError = errors.New("max retries exceeded")
-	}
 
 	// Send to DLQ
 	if err := t.SendToDLQ(ctx, message, lastError); err != nil {
