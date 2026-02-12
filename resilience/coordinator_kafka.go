@@ -36,6 +36,7 @@ type KafkaStateCoordinator struct {
 	offsetsCond *sync.Cond // signals when consumedOffsets are updated
 	cancel      context.CancelFunc
 	wg          sync.WaitGroup
+	started     bool
 }
 
 // NewKafkaStateCoordinator creates a coordinator using a compacted Kafka topic for distributed state.
@@ -87,6 +88,13 @@ func (k *KafkaStateCoordinator) IsLocked(ctx context.Context, msg Message) bool 
 // Once it completes, the coordinator is ready to use with accurate lock state.
 func (k *KafkaStateCoordinator) Start(ctx context.Context, topic string) error {
 	k.mu.Lock()
+
+	if k.started {
+		k.mu.Unlock()
+		return nil
+	}
+
+	k.started = true
 	k.topic = topic
 
 	// create a derived context for background workers that we can cancel
