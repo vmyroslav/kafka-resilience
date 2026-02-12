@@ -36,7 +36,8 @@ func TestErrorTracker_Redirect_Rollback(t *testing.T) {
 
 	// Coordinator mocks: Acquire succeeds, Release MUST be called
 	mockCoordinator := &StateCoordinatorMock{
-		AcquireFunc: func(_ context.Context, _ string, _ Message) error {
+		AcquireFunc: func(_ context.Context, _ string, msg Message) error {
+			_ = SetHeader[string](msg.Headers(), headerID, "lock-uuid")
 			return nil
 		},
 		ReleaseFunc: func(_ context.Context, _ Message) error {
@@ -98,7 +99,8 @@ func TestErrorTracker_Redirect_RollbackFailure_LogsCriticalError(t *testing.T) {
 
 	// Coordinator: Acquire succeeds, but Release ALSO fails (worst case)
 	mockCoordinator := &StateCoordinatorMock{
-		AcquireFunc: func(_ context.Context, _ string, _ Message) error {
+		AcquireFunc: func(_ context.Context, _ string, msg Message) error {
+			_ = SetHeader[string](msg.Headers(), headerID, "lock-uuid")
 			return nil
 		},
 		ReleaseFunc: func(_ context.Context, _ Message) error {
@@ -167,6 +169,8 @@ func TestErrorTracker_Redirect_RollbackSuccess_KeyNotLocked(t *testing.T) {
 	mockCoordinator := &StateCoordinatorMock{
 		AcquireFunc: func(_ context.Context, _ string, msg Message) error {
 			lockState[string(msg.Key())] = true
+			_ = SetHeader[string](msg.Headers(), headerID, "lock-uuid")
+
 			return nil
 		},
 		ReleaseFunc: func(_ context.Context, msg Message) error {
@@ -377,7 +381,8 @@ func TestErrorTracker_Redirect_HappyPath(t *testing.T) {
 	}
 
 	mockCoordinator := &StateCoordinatorMock{
-		AcquireFunc: func(_ context.Context, _ string, _ Message) error {
+		AcquireFunc: func(_ context.Context, _ string, msg Message) error {
+			_ = SetHeader[string](msg.Headers(), headerID, "lock-uuid")
 			return nil
 		},
 	}
@@ -481,7 +486,8 @@ func TestErrorTracker_Redirect_IncrementsAttemptCounter(t *testing.T) {
 	}
 
 	mockCoordinator := &StateCoordinatorMock{
-		AcquireFunc: func(_ context.Context, _ string, _ Message) error {
+		AcquireFunc: func(_ context.Context, _ string, msg Message) error {
+			_ = SetHeader[string](msg.Headers(), headerID, "lock-uuid")
 			return nil
 		},
 	}
@@ -548,7 +554,8 @@ func TestErrorTracker_Redirect_PreservesUserHeaders(t *testing.T) {
 	}
 
 	mockCoordinator := &StateCoordinatorMock{
-		AcquireFunc: func(_ context.Context, _ string, _ Message) error {
+		AcquireFunc: func(_ context.Context, _ string, msg Message) error {
+			_ = SetHeader[string](msg.Headers(), headerID, "lock-uuid")
 			return nil
 		},
 	}
@@ -1589,7 +1596,8 @@ func TestErrorTracker_NewResilientHandler_KeyInRetryChain_AutoRedirects(t *testi
 		IsLockedFunc: func(_ context.Context, _ Message) bool {
 			return true // Key is locked
 		},
-		AcquireFunc: func(_ context.Context, _ string, _ Message) error {
+		AcquireFunc: func(_ context.Context, _ string, msg Message) error {
+			_ = SetHeader[string](msg.Headers(), headerID, "lock-uuid")
 			return nil
 		},
 	}
@@ -1692,7 +1700,8 @@ func TestErrorTracker_NewResilientHandler_Failure_StartsRetryChain(t *testing.T)
 		IsLockedFunc: func(_ context.Context, _ Message) bool {
 			return false // Key is NOT locked
 		},
-		AcquireFunc: func(_ context.Context, _ string, _ Message) error {
+		AcquireFunc: func(_ context.Context, _ string, msg Message) error {
+			_ = SetHeader[string](msg.Headers(), headerID, "lock-uuid")
 			return nil
 		},
 	}

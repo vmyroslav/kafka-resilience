@@ -231,7 +231,7 @@ func TestIntegration_KafkaCoordinator_Rebalance(t *testing.T) {
 		nil,
 	)
 
-	// Start Instance A
+	// start Instance A
 	ctxA, cancelA := context.WithCancel(ctx)
 	err := coordA.Start(ctxA, topic)
 	require.NoError(t, err)
@@ -266,7 +266,7 @@ func TestIntegration_KafkaCoordinator_Rebalance(t *testing.T) {
 	)
 
 	// start Instance B
-	// ut should read the Redirect topic during Start() and populate its local map
+	// it should read the Redirect topic during Start() and populate its local map
 	err = coordB.Start(ctx, topic)
 	require.NoError(t, err)
 
@@ -360,9 +360,6 @@ func TestIntegration_RestartRestoration(t *testing.T) {
 	cfg.StateRestoreTimeout = 15 * time.Second
 	cfg.StateRestoreIdleTimeout = 6 * time.Second
 
-	// -------------------------------------------------------------------------
-	// PHASE 1: Populate State (Application Instance 1)
-	// -------------------------------------------------------------------------
 	// create Client 1 (manually managed for restart simulation)
 	client1, err := sarama.NewClient([]string{sharedBroker}, newTestSaramaConfig())
 	require.NoError(t, err)
@@ -444,9 +441,6 @@ func TestIntegration_RestartRestoration(t *testing.T) {
 	_ = producer1.Close()
 	_ = client1.Close()
 
-	// -------------------------------------------------------------------------
-	// PHASE 2: Restart (Application Instance 2)
-	// -------------------------------------------------------------------------
 	client2 := newTestClient(t)
 	adapters2 := newTestAdapters(t, client2)
 
@@ -465,9 +459,6 @@ func TestIntegration_RestartRestoration(t *testing.T) {
 	err = tracker2.StartCoordinator(ctx, topic)
 	require.NoError(t, err)
 
-	// -------------------------------------------------------------------------
-	// PHASE 3: Verification
-	// -------------------------------------------------------------------------
 	// we verify using messages with the ORIGINAL topic
 	verifyMsgLocked := saramaadapter.NewMessage(&sarama.ConsumerMessage{Topic: topic, Key: []byte(keyLocked)})
 	verifyMsgUnlocked := saramaadapter.NewMessage(&sarama.ConsumerMessage{Topic: topic, Key: []byte(keyUnlocked)})

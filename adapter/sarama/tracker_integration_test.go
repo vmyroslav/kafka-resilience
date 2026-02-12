@@ -357,7 +357,6 @@ func (h *readyDummyHandler) ConsumeClaim(session sarama.ConsumerGroupSession, cl
 }
 
 // TestIntegration_ChainRetry verifies that messages properly go through the retry chain.
-// Tests:
 // - Message fails and gets redirected to retry topic
 // - Message is tracked in retry chain (redirect topic)
 // - Message is retried from retry topic
@@ -499,7 +498,6 @@ func (h *chainRetryHandler) ConsumeClaim(session sarama.ConsumerGroupSession, cl
 }
 
 // TestIntegration_DLQ verifies that messages exceeding max retries are sent to DLQ.
-// Tests:
 // - Message fails repeatedly (more than max retries)
 // - Message is sent to DLQ topic
 // - DLQ message contains proper headers (retry attempts, original error)
@@ -933,7 +931,6 @@ func TestIntegration_StrictOrdering(t *testing.T) {
 
 	retryTopic := tracker.RetryTopic(topic)
 
-	// Handler that:
 	// - msg1 fails first time, succeeds on retry
 	// - msg2 and msg3 should wait for msg1 to complete
 	handler := &strictOrderingHandler{
@@ -1029,7 +1026,7 @@ func (h *strictOrderingHandler) ConsumeClaim(session sarama.ConsumerGroupSession
 			"is_retry", strings.HasPrefix(msg.Topic, "retry_"),
 		)
 
-		// Check if key is in retry chain (for messages from main topic)
+		// check if key is in retry chain (for messages from main topic)
 		if !strings.HasPrefix(msg.Topic, "retry_") && h.tracker.IsInRetryChain(session.Context(), retryMsg) {
 			h.logger.Info("key is in retry chain, redirecting to maintain order",
 				"payload", payload,
@@ -1048,13 +1045,13 @@ func (h *strictOrderingHandler) ConsumeClaim(session sarama.ConsumerGroupSession
 			h.logger.Info("processing msg1", "attempt", attempt)
 
 			if attempt == 1 {
-				// First attempt fails
+				// first attempt fails
 				if err := h.tracker.Redirect(session.Context(), retryMsg, fmt.Errorf("simulated failure")); err != nil {
 					h.logger.Error("failed to redirect msg1", "error", err)
 					return err
 				}
 			} else {
-				// Retry succeeds
+				// retry succeeds
 				if h.tracker.IsInRetryChain(session.Context(), retryMsg) {
 					if err := h.tracker.Free(session.Context(), retryMsg); err != nil {
 						h.logger.Error("failed to free msg1", "error", err)
@@ -1182,21 +1179,21 @@ func TestIntegration_NotRetriableError(t *testing.T) {
 	retryReady := runConsumerLoop(consumerCtx, &wg, retryConsumer, []string{retryTopic}, retrySpyHandler, sharedLogger)
 	waitForReady(t, ctx, mainReady, dlqReady, retryReady)
 
-	// Produce message that will fail with NotRetriableError
+	// produce message that will fail with NotRetriableError
 	produceTestMessage(t, sharedBroker, topic, "not-retriable-key", "validation-error-message")
 
-	// Wait for message to arrive in DLQ
+	// wait for message to arrive in DLQ
 	assert.Eventually(t, func() bool {
 		return dlqReceived.Load()
 	}, 30*time.Second, 500*time.Millisecond, "message should arrive in DLQ")
 
-	// Once message is in DLQ, we've waited long enough - if it was going to retry topic, it would have by now
+	// once message is in DLQ, we've waited long enough - if it was going to retry topic, it would have by now
 	retryTopicChecked.Store(true)
 
-	// Verify message did NOT go to retry topic
+	// verify message did NOT go to retry topic
 	assert.False(t, retryMsgFound.Load(), "NotRetriableError should bypass retry topic")
 
-	// Verify key is NOT locked (NotRetriableError doesn't acquire lock)
+	// verify key is NOT locked (NotRetriableError doesn't acquire lock)
 	checkMsg := saramaadapter.NewMessage(&sarama.ConsumerMessage{
 		Topic: topic,
 		Key:   []byte("not-retriable-key"),

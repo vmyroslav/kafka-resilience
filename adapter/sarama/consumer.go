@@ -61,18 +61,25 @@ func (h *consumerGroupHandler) ConsumeClaim(
 	session sarama.ConsumerGroupSession,
 	claim sarama.ConsumerGroupClaim,
 ) error {
-	for msg := range claim.Messages() {
-		retryMsg := NewMessage(msg)
+	for {
+		select {
+		case msg, ok := <-claim.Messages():
+			if !ok {
+				return nil
+			}
 
-		if err := h.retryHandler.Handle(session.Context(), retryMsg); err != nil {
-			return err
+			retryMsg := NewMessage(msg)
+
+			if err := h.retryHandler.Handle(session.Context(), retryMsg); err != nil {
+				return err
+			}
+
+			// mark message as processed
+			session.MarkMessage(msg, "")
+		case <-session.Context().Done():
+			return nil
 		}
-
-		// mark message as processed
-		session.MarkMessage(msg, "")
 	}
-
-	return nil
 }
 
 // ConsumerFactory implements retry.ConsumerFactory interface for Sarama.

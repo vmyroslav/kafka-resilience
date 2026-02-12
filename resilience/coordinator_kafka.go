@@ -452,7 +452,6 @@ func (k *KafkaStateCoordinator) ensureRedirectTopic(ctx context.Context, topic s
 	// segment.ms=60000 (1 min) balances lock visibility with resource efficiency.
 	// Kafka default is 7 days; 1 minute ensures tombstones propagate quickly enough
 	// for lock releases while avoiding excessive segment rolling overhead.
-	// Acceptable for retry systems where backoffs are typically seconds-to-minutes.
 	return k.admin.CreateTopic(ctx, redirectTopic, partitions, k.cfg.ReplicationFactor, map[string]string{
 		"cleanup.policy": "compact",
 		"segment.ms":     "60000",
