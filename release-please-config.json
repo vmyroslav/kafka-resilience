@@ -4,10 +4,12 @@
   "separate-pull-requests": true,
   "packages": {
     ".": {
-      "component": "kafka-resilience"
+      "component": "kafka-resilience",
+      "release-as": "0.1.0"
     },
     "adapter/sarama": {
-      "component": "sarama"
+      "component": "sarama",
+      "release-as": "0.1.0"
     }
   }
 }
