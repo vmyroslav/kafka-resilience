@@ -5,7 +5,7 @@ go 1.25
 require (
 	github.com/IBM/sarama v1.46.3
 	github.com/vmyroslav/kafka-resilience v0.1.0
-	github.com/vmyroslav/kafka-resilience/adapter/sarama v0.0.0
+	github.com/vmyroslav/kafka-resilience/adapter/sarama v0.1.0
 )
 
 require (
@@ -35,9 +35,4 @@ require (
 	golang.org/x/crypto v0.48.0 // indirect
 	golang.org/x/net v0.50.0 // indirect
 	golang.org/x/sync v0.19.0 // indirect
-)
-
-replace (
-	github.com/vmyroslav/kafka-resilience => ../../../
-	github.com/vmyroslav/kafka-resilience/adapter/sarama => ../../../adapter/sarama
 )
