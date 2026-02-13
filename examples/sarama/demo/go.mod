@@ -4,7 +4,7 @@ go 1.25
 
 require (
 	github.com/IBM/sarama v1.46.3
-	github.com/vmyroslav/kafka-resilience v0.0.0
+	github.com/vmyroslav/kafka-resilience v0.1.0
 	github.com/vmyroslav/kafka-resilience/adapter/sarama v0.0.0
 )
 

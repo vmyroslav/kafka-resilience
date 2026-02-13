@@ -5,11 +5,11 @@
   "packages": {
     ".": {
       "component": "kafka-resilience",
-      "release-as": "0.1.0"
+      "include-component-in-tag": false
     },
     "adapter/sarama": {
       "component": "sarama",
-      "release-as": "0.1.0"
+      "include-component-in-tag": false
     }
   }
 }
