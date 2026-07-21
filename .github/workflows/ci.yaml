@@ -39,7 +39,7 @@ jobs:
         run: task test-integration
 
       - name: Submit coverage
-        uses: codecov/codecov-action@v6
+        uses: codecov/codecov-action@v7
         with:
           files: ./coverage-resilience.out,./coverage-adapter.out,./coverage-integration.out
           token: ${{ secrets.CODECOV_TOKEN }}
